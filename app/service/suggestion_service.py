@@ -2,8 +2,9 @@ from typing import Dict, Any
 import json
 from openai import OpenAI
 import os
+from app.utils.enum_descriptions import get_sdgs_with_descriptions
 
-# Inicializar cliente OpenAI
+# Initialize OpenAI client
 openai_client = None
 OPENAI_KEY = os.getenv("OPENAI_KEY") or os.getenv("OPENAI_API_KEY")
 
@@ -12,20 +13,18 @@ if OPENAI_KEY:
 
 
 def _normalize_to_string(value: Any) -> str:
-    """Convierte la salida del LLM a una cadena legible.
+    """Convert LLM output to a readable string.
 
-    - Si es lista, la une en líneas numeradas.
-    - Si es dict, la convierte a JSON con indentación.
-    - Si es None o vacío, devuelve cadena vacía.
-    - En cualquier otro caso, devuelve str(value).
+    - If list, joins into numbered lines.
+    - If dict, converts to JSON with indentation.
+    - If None or empty, returns empty string.
+    - Otherwise, returns str(value).
     """
     if value is None:
         return ""
     if isinstance(value, list):
-        # si ya viene numerada, mantenemos; en caso contrario enumeramos
         lines = []
         for i, item in enumerate(value, start=1):
-            # item puede ser dict o str
             if isinstance(item, (dict, list)):
                 item_str = json.dumps(item, ensure_ascii=False)
             else:
@@ -37,92 +36,137 @@ def _normalize_to_string(value: Any) -> str:
     return str(value)
 
 
-def generate_suggestions(planificacion_data: Dict[str, Any], context: dict = None) -> dict:
-    """Genera sugerencias pedagógicas basadas en la planificación docente completa usando GPT.
-    
+def generate_suggestions(planning_data: Dict[str, Any], context: dict = None) -> dict:
+    """Generate pedagogical suggestions based on complete course planning using GPT.
+
     Args:
-        planificacion_data: Diccionario con toda la información de la planificación docente
-        context: Contexto adicional (course_id, etc.)
-    
+        planning_data: Dictionary with all course planning information
+        context: Additional context (course_id, etc.)
+
     Returns:
-        dict con 'analysis' y 'pedagogical_suggestions'
+        dict with 'analysis' and 'pedagogicalSuggestions'
     """
     if not openai_client:
         return {
-            "analysis": "Error: OpenAI API Key no configurada",
-            "pedagogical_suggestions": "Por favor configure OPENAI_KEY en el archivo .env"
+            "analysis": "Error: OpenAI API Key not configured",
+            "pedagogicalSuggestions": "Please configure OPENAI_KEY in the .env file"
         }
-    
-    context = context or {}
-    
-    # Extraer información clave de la planificación
-    desc_general = planificacion_data.get('descripcionGeneral', '')
-    semanas = planificacion_data.get('semanas', [])
-    ods = planificacion_data.get('objetivosDesarrolloSostenibleVinculados', [])
-    dua = planificacion_data.get('principiosDUA', [])
-    horas_presenciales = planificacion_data.get('horasPresenciales', 0)
-    horas_virtuales = planificacion_data.get('horasVirtuales', 0)
-    sistema_calificacion = planificacion_data.get('sistemaDeCalificacion', '')
-    
-    # Analizar procesos cognitivos, estrategias y competencias
-    procesos_cognitivos = []
-    estrategias = []
-    competencias = []
-    
-    for semana in semanas:
-        for actividad in semana.get('actividades', []):
-            procesos_cognitivos.extend(actividad.get('procesosCognitivos', []))
-            if actividad.get('estrategiaEnseñanza'):
-                estrategias.append(actividad.get('estrategiaEnseñanza'))
-            competencias.extend(actividad.get('competenciasTransversales', []))
-    
-    # Preparar resumen para GPT
-    resumen = {
-        "descripcion": desc_general,
-        "total_semanas": len(semanas),
-        "total_actividades": sum(len(s.get('actividades', [])) for s in semanas),
-        "horas_presenciales": horas_presenciales,
-        "horas_virtuales": horas_virtuales,
-        "ods_vinculados": ods,
-        "principios_dua": dua,
-        "sistema_calificacion": sistema_calificacion,
-        "procesos_cognitivos_usados": list(set(procesos_cognitivos)),
-        "estrategias_usadas": list(set(e for e in estrategias if e)),
-        "competencias_trabajadas": list(set(competencias))
-    }
-    
-    # Prompt para GPT
-    prompt = f"""
-        Eres un experto en diseño pedagógico y planificación docente universitaria. 
 
-        Analiza la siguiente planificación docente y proporciona:
-        1. Un análisis detallado de la estructura pedagógica
-        2. Sugerencias concretas de mejora basadas en mejores prácticas educativas
+    context = context or {}
+
+    # Extract key information from planning
+    description = planning_data.get('description', '')
+    weekly_plannings = planning_data.get('weeklyPlannings', [])
+    sdgs = planning_data.get('sustainableDevelopmentGoals', [])
+    udl_principles = planning_data.get('universalDesignLearningPrinciples', [])
+    hours_per_format = planning_data.get('hoursPerDeliveryFormat', {})
+    in_person_hours = hours_per_format.get('IN_PERSON', 0)
+    virtual_hours = hours_per_format.get('VIRTUAL', 0)
+    hybrid_hours = hours_per_format.get('HYBRID', 0)
+    grading_system = planning_data.get('partialGradingSystem', '')
+    curricular_unit = planning_data.get('curricularUnit', {})
+    shift = planning_data.get('shift', '')
+
+    # Analyze cognitive processes, strategies, and competencies
+    cognitive_processes = []
+    strategies = []
+    competencies = []
+    resources = []
+    modalities = []
+
+    for week in weekly_plannings:
+        # Direct week activities
+        for activity in week.get('activities', []):
+            cognitive_processes.extend(activity.get('cognitiveProcesses', []))
+            strategies.extend(activity.get('teachingStrategies', []))
+            competencies.extend(activity.get('transversalCompetencies', []))
+            resources.extend(activity.get('learningResources', []))
+            modality = activity.get('learningModality')
+            if modality:
+                modalities.append(modality)
+
+        # Activities within programmatic contents
+        for content in week.get('programmaticContents', []):
+            for activity in content.get('activities', []):
+                cognitive_processes.extend(activity.get('cognitiveProcesses', []))
+                strategies.extend(activity.get('teachingStrategies', []))
+                competencies.extend(activity.get('transversalCompetencies', []))
+                resources.extend(activity.get('learningResources', []))
+                modality = activity.get('learningModality')
+                if modality:
+                    modalities.append(modality)
+
+    # Prepare summary for GPT
+    total_activities = sum(
+        len(w.get('activities', [])) +
+        sum(len(c.get('activities', [])) for c in w.get('programmaticContents', []))
+        for w in weekly_plannings
+    )
+
+    # Format SDGs with their full descriptions
+    sdgs_formatted = get_sdgs_with_descriptions(sdgs) if sdgs else "Ningún ODS vinculado"
+
+    summary = {
+        "description": description,
+        "curricularUnit": curricular_unit.get('name', 'N/A'),
+        "credits": curricular_unit.get('credits', 0),
+        "shift": shift,
+        "totalWeeks": len(weekly_plannings),
+        "totalActivities": total_activities,
+        "inPersonHours": in_person_hours,
+        "virtualHours": virtual_hours,
+        "hybridHours": hybrid_hours,
+        "linkedSDGs": sdgs_formatted,
+        "udlPrinciples": udl_principles,
+        "gradingSystem": grading_system,
+        "cognitiveProcessesUsed": list(set(cognitive_processes)),
+        "strategiesUsed": list(set(s for s in strategies if s)),
+        "competenciesWorked": list(set(competencies)),
+        "resourcesUtilized": list(set(resources)),
+        "modalitiesUsed": list(set(modalities)),
+        "linkedToResearch": planning_data.get('isRelatedToInvestigation', False),
+        "linkedToProductiveSector": planning_data.get('involvesActivitiesWithProductiveSector', False)
+    }
+
+    # Prompt for GPT
+    prompt = f"""
+        You are an expert in pedagogical design and university teaching planning.
+
+        Analyze the following course planning and provide:
+        1. A detailed analysis of the pedagogical structure
+        2. Concrete improvement suggestions based on educational best practices
         
-        PLANIFICACIÓN A ANALIZAR:
-        {json.dumps(resumen, indent=2, ensure_ascii=False)}
+        PLANNING TO ANALYZE:
+        {json.dumps(summary, indent=2, ensure_ascii=False)}
         
-        CONTEXTO DE ANÁLISIS:
-        - Evalúa el balance entre horas presenciales y virtuales
-        - Analiza la diversidad de procesos cognitivos según la Taxonomía de Bloom revisada
-        - Verifica la aplicación de principios DUA (Diseño Universal para el Aprendizaje)
-        - Revisa la vinculación con ODS (Objetivos de Desarrollo Sostenible)
-        - Evalúa la variedad de estrategias de enseñanza
-        - Analiza el desarrollo de competencias transversales
-        - Revisa el sistema de calificación (debe ser formativo y continuo)
+        ANALYSIS CONTEXT:
+        - Evaluate the balance between in-person, virtual, and hybrid hours
+        - Analyze the diversity of cognitive processes according to Bloom's Revised Taxonomy
+        - Verify the application of UDL (Universal Design for Learning) principles
+        - **Review linkage with SDGs (Sustainable Development Goals / Objetivos de Desarrollo Sostenible)**: 
+          The linkedSDGs field contains the FULL DESCRIPTIONS of each SDG, not just codes.
+          Analyze how the course content and activities align with these specific development goals.
+          Provide concrete suggestions on how to strengthen this connection.
+        - Evaluate the variety of teaching strategies
+        - Analyze the development of transversal competencies
+        - Review the partial grading system (should be formative and continuous)
+        - Evaluate linkage with research and productive sector
+        - Analyze the diversity of learning resources used
+        - Consider the learning modalities used (VIRTUAL, IN_PERSON, SIMULTANEOUS_IN_PERSON_VIRTUAL, AUTONOMOUS)
         
-        FORMATO DE RESPUESTA:
-        Devuelve tu análisis en formato JSON con esta estructura exacta:
+        RESPONSE FORMAT:
+        Return your analysis in JSON format with this exact structure:
         {{
-          "analysis": "Análisis detallado de la planificación con métricas y observaciones específicas. Usa emojis para mejor legibilidad.",
-          "pedagogical_suggestions": "Lista numerada de 5-8 sugerencias concretas y accionables para mejorar la planificación. Si la planificación es excelente, felicita y da 2-3 recomendaciones de nivel avanzado."
+          "analysis": "Detailed analysis of the planning with metrics and specific observations. Use emojis for better readability. Response in Spanish.",
+          "pedagogicalSuggestions": "Numbered list of 5-8 concrete and actionable suggestions to improve the planning. If the planning is excellent, congratulate and give 2-3 advanced-level recommendations. Response in Spanish."
         }}
         
-        IMPORTANTE: 
-        - Sé específico y constructivo
-        - Usa terminología pedagógica apropiada
-        - Las sugerencias deben ser accionables
-        - Si algo está bien, reconócelo antes de sugerir mejoras
+        IMPORTANT: 
+        - Be specific and constructive
+        - Use appropriate pedagogical terminology
+        - Suggestions should be actionable
+        - If something is good, acknowledge it before suggesting improvements
+        - ALWAYS respond in Spanish
     """
 
     try:
@@ -131,7 +175,7 @@ def generate_suggestions(planificacion_data: Dict[str, Any], context: dict = Non
             messages=[
                 {
                     "role": "system",
-                    "content": "Eres un experto pedagogo especializado en diseño curricular universitario y mejores prácticas educativas. Respondes siempre en español de forma clara y profesional."
+                    "content": "Eres un pedagogo experto especializado en diseño curricular universitario y mejores prácticas educativas. Respondes siempre en español de forma clara y profesional."
                 },
                 {
                     "role": "user",
@@ -144,28 +188,28 @@ def generate_suggestions(planificacion_data: Dict[str, Any], context: dict = Non
                 "type": "json_object"
             }
         )
-        
-        # Intentamos convertir la respuesta a JSON; si falla, usamos la cadena completa
+
+        # Try to convert response to JSON; if it fails, use the full string
         raw_content = response.choices[0].message.content
         try:
             result = json.loads(raw_content)
         except Exception:
-            # si el LLM devolvió texto plano, intentamos extraer un bloque JSON; si no, devolvemos el texto como análisis
-            result = {"analysis": raw_content, "pedagogical_suggestions": ""}
+            result = {"analysis": raw_content, "pedagogicalSuggestions": ""}
 
-        analysis = result.get("analysis", "No se pudo generar el análisis")
-        pedagogical = result.get("pedagogical_suggestions", "No se pudieron generar sugerencias")
+        analysis = result.get("analysis", "Could not generate analysis")
+        pedagogical = result.get("pedagogicalSuggestions", "Could not generate suggestions")
 
         pedagogical_str = _normalize_to_string(pedagogical)
 
         return {
             "analysis": analysis,
-            "pedagogical_suggestions": pedagogical_str
+            "pedagogicalSuggestions": pedagogical_str
         }
-        
+
     except Exception as e:
-        # Fallback en caso de error
+        # Fallback in case of error
         return {
-            "analysis": f"Error al generar análisis con GPT: {str(e)}",
-            "pedagogical_suggestions": "Por favor intente nuevamente o verifique su configuración de OpenAI."
+            "analysis": f"Error generating analysis with GPT: {str(e)}",
+            "pedagogicalSuggestions": "Please try again or check your OpenAI configuration."
         }
+

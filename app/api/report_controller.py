@@ -6,17 +6,18 @@ router = APIRouter()
 
 @router.post("/report/generate", response_model=ReportResponse)
 async def generate_report(body: ReportRequest):
-    if not body or not body.estadisticas:
-        raise HTTPException(status_code=400, detail="Las estadísticas del curso son requeridas")
+    if not body or not body.statistics:
+        raise HTTPException(status_code=400, detail="Course statistics are required")
 
-    # Convertir estadísticas a dict
-    estadisticas_dict = body.estadisticas.model_dump()
+    # Convert statistics to dict
+    statistics_dict = body.statistics.model_dump()
 
-    result = generate_basic_report(body.course_id, estadisticas_dict)
+    result = generate_basic_report(body.courseId, statistics_dict)
 
     return ReportResponse(
         success=result.get('success', True),
-        reporte=result.get('reporte', {}),
-        recomendaciones=result.get('recomendaciones', []),
-        calificacion_general=result.get('calificacion_general', '')
+        report=result.get('report', {}),
+        recommendations=result.get('recommendations', []),
+        overallRating=result.get('overallRating', '')
     )
+

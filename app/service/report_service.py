@@ -1,9 +1,11 @@
-from typing import Dict, Any, List
+from typing import Dict, Any
 import json
 from openai import OpenAI
 import os
+from datetime import datetime
+from app.utils.enum_descriptions import get_sdg_description
 
-# Inicializar cliente OpenAI
+# Initialize OpenAI client
 openai_client = None
 OPENAI_KEY = os.getenv("OPENAI_KEY") or os.getenv("OPENAI_API_KEY")
 
@@ -11,97 +13,110 @@ if OPENAI_KEY:
     openai_client = OpenAI(api_key=OPENAI_KEY)
 
 
-def generate_basic_report(course_id: str, estadisticas: Dict[str, Any]) -> Dict[str, Any]:
-    """Genera un reporte completo con análisis y recomendaciones basado en estadísticas del curso usando GPT.
-    
+def generate_basic_report(course_id: str, statistics: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate a complete report with analysis and recommendations based on course statistics using GPT.
+
     Args:
-        course_id: Identificador del curso
-        estadisticas: Diccionario con estadísticas completas del curso
-    
+        course_id: Course identifier
+        statistics: Dictionary with complete course statistics
+
     Returns:
-        dict con reporte, recomendaciones y calificación general
+        dict with report, recommendations and overall rating
     """
     if not openai_client:
         return {
             "success": False,
-            "reporte": {"error": "OpenAI API Key no configurada"},
-            "recomendaciones": ["Por favor configure OPENAI_KEY en el archivo .env"],
-            "calificacion_general": "ERROR"
+            "report": {"error": "OpenAI API Key not configured"},
+            "recommendations": ["Please configure OPENAI_KEY in the .env file"],
+            "overallRating": "ERROR"
         }
-    
-    # Preparar datos para GPT
-    estadisticas_json = json.dumps(estadisticas, indent=2, ensure_ascii=False)
-    
-    # Prompt para GPT
+
+    # Prepare data for GPT
+    statistics_json = json.dumps(statistics, indent=2, ensure_ascii=False)
+
+    # Add SDG descriptions if present
+    sdg_context = ""
+    if 'linkedSDGs' in statistics and statistics['linkedSDGs']:
+        sdg_descriptions = []
+        for sdg_code, count in statistics['linkedSDGs'].items():
+            desc = get_sdg_description(sdg_code)
+            sdg_descriptions.append(f"  - {sdg_code}: {desc} (Mentioned {count} times)")
+        sdg_context = "\n\nSDG CONTEXT (Objetivos de Desarrollo Sostenible):\n" + "\n".join(sdg_descriptions)
+
+    # Prompt for GPT
     prompt = f"""
-        Eres un experto en evaluación pedagógica y análisis de calidad educativa universitaria.
+        You are an expert in pedagogical evaluation and university educational quality analysis.
     
-        Analiza las siguientes estadísticas de un curso y genera un reporte completo de evaluación:
+        Analyze the following course statistics and generate a complete evaluation report:
         
-        CURSO ID: {course_id}
+        COURSE ID: {course_id}
         
-        ESTADÍSTICAS DEL CURSO:
-        {estadisticas_json}
+        COURSE STATISTICS:
+        {statistics_json}
+        {sdg_context}
         
-        CRITERIOS DE EVALUACIÓN:
-        1. **Procesos Cognitivos**: Balance entre niveles básicos (recordar, comprender) y superiores (analizar, evaluar, crear)
-           - Óptimo: 30-40% en niveles superiores
-           - Problema: >60% en niveles básicos
+        EVALUATION CRITERIA:
+        1. **Cognitive Processes**: Balance between basic levels (REMEMBER, UNDERSTAND) and higher levels (ANALYZE, EVALUATE, CREATE)
+           - Optimal: 30-40% in higher levels
+           - Problem: >60% in basic levels
         
-        2. **Competencias Transversales**: Diversidad y balance
-           - Óptimo: 3+ competencias diferentes, distribuidas equitativamente
-           - Problema: <3 competencias o desequilibrio >3:1
+        2. **Transversal Competencies**: Diversity and balance
+           - Optimal: 3+ different competencies, evenly distributed
+           - Problem: <3 competencies or imbalance >3:1
         
-        3. **Modalidades**: Balance presencial/virtual
-           - Óptimo: 30-70% en cada modalidad
-           - Problema: >80% en una sola modalidad
+        3. **Learning Modalities**: Balance between IN_PERSON, VIRTUAL, SIMULTANEOUS_IN_PERSON_VIRTUAL, AUTONOMOUS
+           - Optimal: Mix according to course nature
+           - Problem: >80% in one modality without justification
         
-        4. **Estrategias de Enseñanza**: Variedad metodológica
-           - Óptimo: 3+ estrategias, clase expositiva <50%
-           - Problema: <3 estrategias o clase expositiva >50%
+        4. **Teaching Strategies**: Methodological variety
+           - Optimal: 3+ strategies, LECTURE <50%
+           - Problem: <3 strategies or LECTURE >50%
         
-        5. **Duración de Actividades**: Tiempo apropiado
-           - Óptimo: 30-90 minutos promedio
-           - Problema: <30 o >120 minutos
+        5. **Activity Duration**: Appropriate time
+           - Optimal: 30-90 minutes average
+           - Problem: <30 or >120 minutes
         
-        6. **Recursos**: Diversidad de materiales
-           - Óptimo: 3+ tipos diferentes
-           - Problema: <3 tipos
+        6. **Learning Resources**: Diversity of materials
+           - Optimal: 3+ different types
+           - Problem: <3 types
         
-        7. **Vinculación ODS**: Compromiso social
-           - Óptimo: Al menos 1 ODS vinculado
-           - Problema: Sin vinculación
+        7. **SDG Linkage (Objetivos de Desarrollo Sostenible)**: Commitment to sustainable development
+           - The SDG codes (SDG_1 to SDG_17) represent specific UN development goals
+           - Review the SDG CONTEXT section above for full descriptions of each goal
+           - Optimal: At least 1 linked SDG with clear alignment to course objectives
+           - Problem: No linkage or superficial connection without real integration
         
-        8. **Evaluación**: Enfoque formativo
-           - Óptimo: Metodologías activas predominan
-           - Problema: Métodos tradicionales predominan
+        8. **Delivery Format Hours**: Balance between IN_PERSON, VIRTUAL and HYBRID
+           - Optimal: Balanced mix according to course nature
+           - Problem: >90% in one format without justification
         
-        FORMATO DE RESPUESTA:
-        Devuelve tu análisis en formato JSON con esta estructura exacta:
+        RESPONSE FORMAT:
+        Return your analysis in JSON format with this exact structure:
         {{
-          "calificacion_general": "Una de: EXCELENTE ⭐⭐⭐⭐⭐ | MUY BUENO ⭐⭐⭐⭐ | BUENO ⭐⭐⭐ | REGULAR ⭐⭐ | NECESITA MEJORA ⭐",
-          "puntuacion_numerica": 75,
-          "mensaje": "Mensaje personalizado de 1-2 líneas sobre el estado general",
-          "puntos_fuertes": ["Lista de 3-5 aspectos positivos específicos encontrados"],
-          "areas_de_mejora": ["Lista de 2-4 áreas que necesitan fortalecimiento"],
-          "recomendaciones": ["Lista de 4-8 recomendaciones específicas y accionables con emojis"],
-          "analisis_detallado": {{
-            "procesos_cognitivos": "Análisis cualitativo de la distribución y balance",
-            "competencias_transversales": "Análisis de diversidad y equilibrio",
-            "balance_modalidad": "Evaluación del balance presencial/virtual",
-            "estrategias_ensenanza": "Análisis de variedad metodológica",
-            "recursos": "Evaluación de diversidad de materiales",
-            "vinculacion_ods": "Análisis de compromiso con desarrollo sostenible"
+          "overallRating": "One of: EXCELLENT ⭐⭐⭐⭐⭐ | VERY GOOD ⭐⭐⭐⭐ | GOOD ⭐⭐⭐ | REGULAR ⭐⭐ | NEEDS IMPROVEMENT ⭐",
+          "numericScore": 75,
+          "message": "Personalized message of 1-2 lines about the general state",
+          "strengths": ["List of 3-5 specific positive aspects found"],
+          "improvementAreas": ["List of 2-4 areas that need strengthening"],
+          "recommendations": ["List of 4-8 specific and actionable recommendations with emojis"],
+          "detailedAnalysis": {{
+            "cognitiveProcesses": "Qualitative analysis of distribution and balance",
+            "transversalCompetencies": "Analysis of diversity and balance",
+            "modalityBalance": "Evaluation of modality balance",
+            "teachingStrategies": "Analysis of methodological variety",
+            "resources": "Evaluation of material diversity",
+            "sdgLinkage": "Analysis of commitment to sustainable development"
           }}
         }}
         
-        INSTRUCCIONES:
-        - Usa datos concretos de las estadísticas
-        - Sé específico con porcentajes y números
-        - Las recomendaciones deben ser accionables
-        - Usa emojis para mejor legibilidad
-        - La puntuación numérica debe estar entre 0-100
-        - Califica con criterio pedagógico riguroso pero constructivo
+        INSTRUCTIONS:
+        - Use concrete data from statistics
+        - Be specific with percentages and numbers
+        - Recommendations should be actionable
+        - Use emojis for better readability
+        - Numeric score should be between 0-100
+        - Grade with rigorous but constructive pedagogical criteria
+        - ALWAYS respond in Spanish
     """
 
     try:
@@ -115,44 +130,46 @@ def generate_basic_report(course_id: str, estadisticas: Dict[str, Any]) -> Dict[
             max_tokens=2500,
             response_format={"type": "json_object"}
         )
-        
+
         result = json.loads(response.choices[0].message.content)
-        
-        # Construir reporte final
-        reporte = {
-            "course_id": course_id,
-            "fecha_analisis": "2025-01-17",
-            "calificacion_general": result.get("calificacion_general", "BUENO ⭐⭐⭐"),
-            "puntuacion": f"{result.get('puntuacion_numerica', 70)}%",
-            "mensaje": result.get("mensaje", "Análisis completado"),
-            "resumen_ejecutivo": {
-                "total_semanas": estadisticas.get('totalSemanas', 0),
-                "total_horas": estadisticas.get('totalHorasPresenciales', 0) + estadisticas.get('totalHorasVirtuales', 0),
-                "horas_presenciales": estadisticas.get('totalHorasPresenciales', 0),
-                "horas_virtuales": estadisticas.get('totalHorasVirtuales', 0),
-                "duracion_promedio_actividades": f"{estadisticas.get('promedioDuracionActividadesMin', 0)} min",
-                "total_actividades_analizadas": sum(estadisticas.get('procesosCognitivos', {}).values())
+
+        # Build final report
+        report = {
+            "courseId": course_id,
+            "analysisDate": datetime.now().strftime("%Y-%m-%d"),
+            "overallRating": result.get("overallRating", "GOOD ⭐⭐⭐"),
+            "score": f"{result.get('numericScore', 70)}%",
+            "message": result.get("message", "Analysis completed"),
+            "executiveSummary": {
+                "totalWeeks": statistics.get('totalWeeks', 0),
+                "totalHours": statistics.get('totalInPersonHours', 0) + statistics.get('totalVirtualHours', 0) + statistics.get('totalHybridHours', 0),
+                "inPersonHours": statistics.get('totalInPersonHours', 0),
+                "virtualHours": statistics.get('totalVirtualHours', 0),
+                "hybridHours": statistics.get('totalHybridHours', 0),
+                "averageActivityDuration": f"{statistics.get('averageActivityDurationInMinutes', 0)} min",
+                "totalActivitiesAnalyzed": sum(statistics.get('cognitiveProcesses', {}).values())
             },
-            "analisis_detallado": result.get("analisis_detallado", {}),
-            "puntos_fuertes": result.get("puntos_fuertes", []),
-            "areas_de_mejora": result.get("areas_de_mejora", [])
+            "detailedAnalysis": result.get("detailedAnalysis", {}),
+            "strengths": result.get("strengths", []),
+            "improvementAreas": result.get("improvementAreas", [])
         }
-        
+
         return {
             "success": True,
-            "reporte": reporte,
-            "recomendaciones": result.get("recomendaciones", []),
-            "calificacion_general": result.get("calificacion_general", "BUENO ⭐⭐⭐")
+            "report": report,
+            "recommendations": result.get("recommendations", []),
+            "overallRating": result.get("overallRating", "GOOD ⭐⭐⭐")
         }
-        
+
     except Exception as e:
-        # Fallback en caso de error
+        # Fallback in case of error
         return {
             "success": False,
-            "reporte": {
-                "course_id": course_id,
-                "error": f"Error al generar reporte con GPT: {str(e)}"
+            "report": {
+                "courseId": course_id,
+                "error": f"Error generating report with GPT: {str(e)}"
             },
-            "recomendaciones": ["Por favor intente nuevamente o verifique su configuración de OpenAI."],
-            "calificacion_general": "ERROR"
+            "recommendations": ["Please try again or check your OpenAI configuration."],
+            "overallRating": "ERROR"
         }
+

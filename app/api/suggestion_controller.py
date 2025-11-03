@@ -1,24 +1,25 @@
 from fastapi import APIRouter, HTTPException
-from app.api.schemas.planificacion_dto import PlanificacionRequestDTO
+from app.api.schemas.planification_dto import CoursePlanningRequestDTO
 from app.api.schemas.suggestion_dto import SuggestionResponse
 from app.service.suggestion_service import generate_suggestions
 
 router = APIRouter()
 
 @router.post("/suggestions", response_model=SuggestionResponse)
-async def get_suggestions(body: PlanificacionRequestDTO):
-    if not body or not body.planificacionDocente:
-        raise HTTPException(status_code=400, detail="La planificación docente es requerida")
+async def get_suggestions(body: CoursePlanningRequestDTO):
+    if not body or not body.coursePlanning:
+        raise HTTPException(status_code=400, detail="Course planning is required")
 
-    # Convertir a dict para procesar
-    planificacion_dict = body.planificacionDocente.model_dump()
+    # Convert to dict for processing
+    planning_dict = body.coursePlanning.model_dump()
 
     result = generate_suggestions(
-        planificacion_dict,
-        context={"course_id": body.course_id}
+        planning_dict,
+        context={"course_id": body.coursePlanning.id}
     )
 
     return SuggestionResponse(
         analysis=result.get('analysis', ''),
-        pedagogical_suggestions=result.get('pedagogical_suggestions', '')
+        pedagogicalSuggestions=result.get('pedagogicalSuggestions', '')
     )
+
