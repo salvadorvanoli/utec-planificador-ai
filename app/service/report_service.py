@@ -13,12 +13,13 @@ if OPENAI_KEY:
     openai_client = OpenAI(api_key=OPENAI_KEY)
 
 
-def generate_basic_report(course_id: str, statistics: Dict[str, Any]) -> Dict[str, Any]:
-    """Generate a complete report with analysis and recommendations based on course statistics using GPT.
+def generate_basic_report(course_id: str, statistics: Dict[str, Any], planning: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate a complete report with analysis and recommendations based on course statistics and planning using GPT.
 
     Args:
         course_id: Course identifier
         statistics: Dictionary with complete course statistics
+        planning: Dictionary with complete course planning
 
     Returns:
         dict with report, recommendations and overall rating
@@ -33,6 +34,7 @@ def generate_basic_report(course_id: str, statistics: Dict[str, Any]) -> Dict[st
 
     # Prepare data for GPT
     statistics_json = json.dumps(statistics, indent=2, ensure_ascii=False)
+    planning_json = json.dumps(planning, indent=2, ensure_ascii=False)
 
     # Add SDG descriptions if present
     sdg_context = ""
@@ -47,12 +49,15 @@ def generate_basic_report(course_id: str, statistics: Dict[str, Any]) -> Dict[st
     prompt = f"""
         You are an expert in pedagogical evaluation and university educational quality analysis.
     
-        Analyze the following course statistics and generate a complete evaluation report:
+        Analyze the following course statistics AND planning to generate a complete evaluation report:
         
         COURSE ID: {course_id}
         
         COURSE STATISTICS:
         {statistics_json}
+        
+        COMPLETE COURSE PLANNING:
+        {planning_json}
         {sdg_context}
         
         EVALUATION CRITERIA:

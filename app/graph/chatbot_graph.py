@@ -77,20 +77,38 @@ class ReactAgentWrapper:
 
         user_text = state.input or ""
 
+        # Check if planning context is available
+        planning_context = ""
+        if state.planning:
+            import json
+            planning_json = json.dumps(state.planning, indent=2, ensure_ascii=False)
+            planning_context = f"\n\nCONTEXTO DE PLANIFICACIÓN PROPORCIONADA:\n{planning_json}\n"
+
         # Simple tool routing based on keywords
         lower = user_text.lower()
         tool_response = None
         if any(k in lower for k in ["analiz", "analizar", "analisis", "revisión", "revisión"]):
-            # call planner analysis tool — pass only the user text or planning text
-            tool_response = analyze_planificacion(user_text)
+            # call planner analysis tool — pass the user text, and planning if available
+            analysis_input = user_text
+            if state.planning:
+                analysis_input = f"{user_text}\n\nPlanificación disponible: {planning_context}"
+            tool_response = analyze_planificacion(analysis_input)
         elif any(k in lower for k in ["suger", "sugerencia", "pedagog", "retroaliment", "feedback", "rúbrica", "rubrica"]):
-            tool_response = get_pedagogical_help(user_text)
+            help_input = user_text
+            if state.planning:
+                help_input = f"{user_text}\n\nPlanificación disponible: {planning_context}"
+            tool_response = get_pedagogical_help(help_input)
 
         if tool_response:
             # integrate tool output and call LLM to format final response
-            messages.append({"role": "user", "content": f"Herramienta: {tool_response}\n\nUsuario: {user_text}"})
+            full_context = f"Herramienta: {tool_response}{planning_context}\n\nUsuario: {user_text}"
+            messages.append({"role": "user", "content": full_context})
         else:
-            messages.append({"role": "user", "content": user_text})
+            # If no tool but planning is available, add it as context
+            full_input = user_text
+            if planning_context:
+                full_input = f"{user_text}{planning_context}"
+            messages.append({"role": "user", "content": full_input})
 
         try:
             reply = self._call_openai(messages)

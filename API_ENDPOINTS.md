@@ -7,12 +7,21 @@ http://localhost:8000
 
 ---
 
+## 🔥 Cambios Recientes
+
+### Actualizaciones Importantes:
+1. **Chat Endpoint** - Ahora acepta **opcionalmente** una planificación de curso
+2. **Report Endpoint** - Ahora **requiere obligatoriamente** tanto las estadísticas como la planificación completa
+3. **Suggestions Endpoint** - Sin cambios (siempre requiere planificación)
+
+---
+
 ## 🤖 1. Chatbot - Pedagogical Queries
 
 ### **POST** `/agent/chat/message`
-Query the chatbot about pedagogical practices using documentation.
+Query the chatbot about pedagogical practices. Optionally include a course planning for context-specific advice.
 
-#### Request Body:
+#### Request Body (Sin planificación):
 ```json
 {
   "session_id": "profesor_001",
@@ -20,10 +29,85 @@ Query the chatbot about pedagogical practices using documentation.
 }
 ```
 
+#### Request Body (Con planificación - OPCIONAL):
+```json
+{
+  "session_id": "profesor_001",
+  "message": "¿Qué opinas de mi planificación? ¿Tiene buena distribución de procesos cognitivos?",
+  "coursePlanning": {
+    "id": 1,
+    "shift": "MORNING",
+    "description": "Curso de introducción a la programación orientada a objetos",
+    "startDate": "2024-03-01",
+    "endDate": "2024-07-15",
+    "partialGradingSystem": "PGS_1",
+    "hoursPerDeliveryFormat": {
+      "IN_PERSON": 40,
+      "VIRTUAL": 20,
+      "HYBRID": 10
+    },
+    "isRelatedToInvestigation": true,
+    "involvesActivitiesWithProductiveSector": false,
+    "sustainableDevelopmentGoals": ["SDG_4", "SDG_8", "SDG_9"],
+    "universalDesignLearningPrinciples": [
+      "MEANS_OF_REPRESENTATION",
+      "MEANS_OF_ACTION_EXPRESSION",
+      "MEANS_OF_ENGAGEMENT"
+    ],
+    "curricularUnit": {
+      "id": 1,
+      "name": "Programación I",
+      "credits": 4,
+      "domainAreas": ["SOFTWARE_ENGINEERING", "PROGRAMMING"],
+      "professionalCompetencies": ["SOFTWARE_DESIGN", "PROBLEM_SOLVING"],
+      "term": {
+        "id": 1,
+        "number": 1,
+        "program": {
+          "id": 1,
+          "name": "Ingeniería en Computación",
+          "durationInTerms": 8,
+          "totalCredits": 240
+        }
+      }
+    },
+    "weeklyPlannings": [
+      {
+        "id": 1,
+        "weekNumber": 1,
+        "startDate": "2024-03-01",
+        "bibliographicReferences": [
+          "Deitel, P. & Deitel, H. (2020). Java How to Program. 11th Edition. Pearson."
+        ],
+        "programmaticContents": [
+          {
+            "id": 1,
+            "content": "Introducción a la programación orientada a objetos",
+            "activities": [
+              {
+                "id": 1,
+                "description": "Explicación teórica de conceptos básicos de POO",
+                "durationInMinutes": 90,
+                "cognitiveProcesses": ["REMEMBER", "UNDERSTAND"],
+                "transversalCompetencies": ["CRITICAL_THINKING", "COMMUNICATION"],
+                "learningModality": "IN_PERSON",
+                "teachingStrategies": ["LECTURE"],
+                "learningResources": ["EXHIBITION", "WHITEBOARD"]
+              }
+            ]
+          }
+        ],
+        "activities": []
+      }
+    ]
+  }
+}
+```
+
 #### Response:
 ```json
 {
-  "reply": "Basándome en la documentación pedagógica, el Aprendizaje Basado en Problemas..."
+  "reply": "Tu planificación muestra una buena base. En cuanto a procesos cognitivos, la semana 1 enfoca principalmente en REMEMBER y UNDERSTAND, lo cual es apropiado para una introducción. Sin embargo, te recomiendo incorporar actividades de niveles superiores (APPLY, ANALYZE, CREATE) en las siguientes semanas para desarrollar el pensamiento crítico..."
 }
 ```
 
@@ -47,7 +131,9 @@ Delete a specific chat session.
 ## 📝 2. Course Planning Suggestions
 
 ### **POST** `/agent/suggestions`
-Analyzes a course planning and provides improvement suggestions.
+Analyzes a complete course planning and provides improvement suggestions based on pedagogical best practices.
+
+**⚠️ Nota:** Este endpoint **siempre requiere** una planificación completa.
 
 #### Request Body:
 ```json
@@ -66,11 +152,7 @@ Analyzes a course planning and provides improvement suggestions.
     },
     "isRelatedToInvestigation": true,
     "involvesActivitiesWithProductiveSector": false,
-    "sustainableDevelopmentGoals": [
-      "SDG_4",
-      "SDG_8",
-      "SDG_9"
-    ],
+    "sustainableDevelopmentGoals": ["SDG_4", "SDG_8", "SDG_9"],
     "universalDesignLearningPrinciples": [
       "MEANS_OF_REPRESENTATION",
       "MEANS_OF_ACTION_EXPRESSION",
@@ -80,14 +162,8 @@ Analyzes a course planning and provides improvement suggestions.
       "id": 1,
       "name": "Programación I",
       "credits": 4,
-      "domainAreas": [
-        "SOFTWARE_ENGINEERING",
-        "PROGRAMMING"
-      ],
-      "professionalCompetencies": [
-        "SOFTWARE_DESIGN",
-        "PROBLEM_SOLVING"
-      ],
+      "domainAreas": ["SOFTWARE_ENGINEERING", "PROGRAMMING"],
+      "professionalCompetencies": ["SOFTWARE_DESIGN", "PROBLEM_SOLVING"],
       "term": {
         "id": 1,
         "number": 1,
@@ -117,172 +193,26 @@ Analyzes a course planning and provides improvement suggestions.
                 "id": 1,
                 "description": "Explicación teórica de conceptos básicos de POO: clases, objetos, métodos",
                 "durationInMinutes": 90,
-                "cognitiveProcesses": [
-                  "REMEMBER",
-                  "UNDERSTAND"
-                ],
-                "transversalCompetencies": [
-                  "CRITICAL_THINKING",
-                  "COMMUNICATION"
-                ],
+                "cognitiveProcesses": ["REMEMBER", "UNDERSTAND"],
+                "transversalCompetencies": ["CRITICAL_THINKING", "COMMUNICATION"],
                 "learningModality": "IN_PERSON",
-                "teachingStrategies": [
-                  "LECTURE"
-                ],
-                "learningResources": [
-                  "WHITEBOARD",
-                  "BOOK_DOCUMENT"
-                ]
+                "teachingStrategies": ["LECTURE"],
+                "learningResources": ["WHITEBOARD", "BOOK_DOCUMENT"]
               },
               {
                 "id": 2,
                 "description": "Ejercicio práctico: crear primera clase en Java",
                 "durationInMinutes": 60,
-                "cognitiveProcesses": [
-                  "APPLY",
-                  "CREATE"
-                ],
-                "transversalCompetencies": [
-                  "LEARNING_SELF_REGULATION"
-                ],
+                "cognitiveProcesses": ["APPLY", "CREATE"],
+                "transversalCompetencies": ["LEARNING_SELF_REGULATION"],
                 "learningModality": "IN_PERSON",
-                "teachingStrategies": [
-                  "PRACTICAL_ACTIVITY"
-                ],
-                "learningResources": [
-                  "BOOK_DOCUMENT"
-                ]
-              }
-            ]
-          },
-          {
-            "id": 2,
-            "content": "Sintaxis básica de Java",
-            "activities": [
-              {
-                "id": 3,
-                "description": "Demostración de sintaxis: variables, tipos de datos, operadores",
-                "durationInMinutes": 45,
-                "cognitiveProcesses": [
-                  "UNDERSTAND",
-                  "REMEMBER"
-                ],
-                "transversalCompetencies": [
-                  "CRITICAL_THINKING"
-                ],
-                "learningModality": "IN_PERSON",
-                "teachingStrategies": [
-                  "DEMONSTRATION"
-                ],
-                "learningResources": [
-                  "WHITEBOARD"
-                ]
+                "teachingStrategies": ["PRACTICAL_ACTIVITY"],
+                "learningResources": ["BOOK_DOCUMENT"]
               }
             ]
           }
         ],
-        "activities": [
-          {
-            "id": 4,
-            "description": "Quiz de evaluación sobre conceptos introductorios",
-            "durationInMinutes": 20,
-            "cognitiveProcesses": [
-              "REMEMBER",
-              "UNDERSTAND"
-            ],
-            "transversalCompetencies": [
-              "LEARNING_SELF_REGULATION"
-            ],
-            "learningModality": "AUTONOMOUS",
-            "teachingStrategies": [
-              "TESTS"
-            ],
-            "learningResources": [
-              "ONLINE_EVALUATION"
-            ]
-          }
-        ]
-      },
-      {
-        "id": 2,
-        "weekNumber": 2,
-        "startDate": "2024-03-08",
-        "bibliographicReferences": [
-          "Eckel, B. (2006). Thinking in Java. 4th Edition. Prentice Hall.",
-          "Bloch, J. (2018). Effective Java. 3rd Edition. Addison-Wesley."
-        ],
-        "programmaticContents": [
-          {
-            "id": 3,
-            "content": "Estructuras de control: condicionales y bucles",
-            "activities": [
-              {
-                "id": 5,
-                "description": "Teoría sobre if-else, switch, for, while",
-                "durationInMinutes": 60,
-                "cognitiveProcesses": [
-                  "UNDERSTAND",
-                  "ANALYZE"
-                ],
-                "transversalCompetencies": [
-                  "CRITICAL_THINKING"
-                ],
-                "learningModality": "IN_PERSON",
-                "teachingStrategies": [
-                  "LECTURE"
-                ],
-                "learningResources": [
-                  "WHITEBOARD",
-                  "BOOK_DOCUMENT"
-                ]
-              },
-              {
-                "id": 6,
-                "description": "Laboratorio: implementar algoritmos con estructuras de control",
-                "durationInMinutes": 90,
-                "cognitiveProcesses": [
-                  "APPLY",
-                  "ANALYZE",
-                  "CREATE"
-                ],
-                "transversalCompetencies": [
-                  "LEARNING_SELF_REGULATION",
-                  "CRITICAL_THINKING"
-                ],
-                "learningModality": "IN_PERSON",
-                "teachingStrategies": [
-                  "LABORATORY_PRACTICES",
-                  "PRACTICAL_ACTIVITY"
-                ],
-                "learningResources": [
-                  "BOOK_DOCUMENT"
-                ]
-              }
-            ]
-          }
-        ],
-        "activities": [
-          {
-            "id": 7,
-            "description": "Tarea: resolver conjunto de ejercicios de programación",
-            "durationInMinutes": 120,
-            "cognitiveProcesses": [
-              "APPLY",
-              "ANALYZE"
-            ],
-            "transversalCompetencies": [
-              "LEARNING_SELF_REGULATION"
-            ],
-            "learningModality": "AUTONOMOUS",
-            "teachingStrategies": [
-              "PRACTICAL_ACTIVITY"
-            ],
-            "learningResources": [
-              "BOOK_DOCUMENT",
-              "WEBPAGE"
-            ]
-          }
-        ]
+        "activities": []
       }
     ]
   }
@@ -292,8 +222,8 @@ Analyzes a course planning and provides improvement suggestions.
 #### Response:
 ```json
 {
-  "analysis": "📊 **Análisis de la Planificación del Curso**\n\n✅ La planificación presenta...",
-  "pedagogicalSuggestions": "1. Incrementar actividades de nivel CREATE...\n2. Incluir más recursos digitales..."
+  "analysis": "📊 **Análisis de la Planificación del Curso**\n\n✅ La planificación presenta una estructura básica sólida con enfoque práctico desde la primera semana...",
+  "pedagogicalSuggestions": "1. Incrementar actividades de nivel CREATE (actualmente bajo)\n2. Incluir más recursos digitales interactivos\n3. Diversificar estrategias de enseñanza más allá de LECTURE\n4. Fortalecer la vinculación con el sector productivo"
 }
 ```
 
@@ -302,7 +232,9 @@ Analyzes a course planning and provides improvement suggestions.
 ## 📊 3. Course Report Generation
 
 ### **POST** `/agent/report/generate`
-Generates a complete report on course performance and quality based on statistics.
+Generates a complete report analyzing course quality based on both statistics and the complete planning.
+
+**⚠️ Nota:** Este endpoint ahora **requiere obligatoriamente** tanto las estadísticas como la planificación completa.
 
 #### Request Body:
 ```json
@@ -352,6 +284,70 @@ Generates a complete report on course performance and quality based on statistic
     "totalInPersonHours": 40,
     "totalVirtualHours": 20,
     "totalHybridHours": 10
+  },
+  "coursePlanning": {
+    "id": 1,
+    "shift": "MORNING",
+    "description": "Curso de introducción a la programación orientada a objetos",
+    "startDate": "2024-03-01",
+    "endDate": "2024-07-15",
+    "partialGradingSystem": "PGS_1",
+    "hoursPerDeliveryFormat": {
+      "IN_PERSON": 40,
+      "VIRTUAL": 20,
+      "HYBRID": 10
+    },
+    "isRelatedToInvestigation": true,
+    "involvesActivitiesWithProductiveSector": false,
+    "sustainableDevelopmentGoals": ["SDG_4", "SDG_8", "SDG_9"],
+    "universalDesignLearningPrinciples": [
+      "MEANS_OF_REPRESENTATION",
+      "MEANS_OF_ACTION_EXPRESSION"
+    ],
+    "curricularUnit": {
+      "id": 1,
+      "name": "Programación I",
+      "credits": 4,
+      "domainAreas": ["SOFTWARE_ENGINEERING"],
+      "professionalCompetencies": ["SOFTWARE_DESIGN"],
+      "term": {
+        "id": 1,
+        "number": 1,
+        "program": {
+          "id": 1,
+          "name": "Ingeniería en Computación",
+          "durationInTerms": 8,
+          "totalCredits": 240
+        }
+      }
+    },
+    "weeklyPlannings": [
+      {
+        "id": 1,
+        "weekNumber": 1,
+        "startDate": "2024-03-01",
+        "bibliographicReferences": ["Deitel, P. & Deitel, H. (2020). Java How to Program."],
+        "programmaticContents": [
+          {
+            "id": 1,
+            "content": "Introducción a POO",
+            "activities": [
+              {
+                "id": 1,
+                "description": "Clase teórica",
+                "durationInMinutes": 90,
+                "cognitiveProcesses": ["REMEMBER", "UNDERSTAND"],
+                "transversalCompetencies": ["CRITICAL_THINKING"],
+                "learningModality": "IN_PERSON",
+                "teachingStrategies": ["LECTURE"],
+                "learningResources": ["WHITEBOARD"]
+              }
+            ]
+          }
+        ],
+        "activities": []
+      }
+    ]
   }
 }
 ```
@@ -362,10 +358,10 @@ Generates a complete report on course performance and quality based on statistic
   "success": true,
   "report": {
     "courseId": "PROG101-2024",
-    "analysisDate": "2025-01-17",
-    "overallRating": "GOOD ⭐⭐⭐",
-    "score": "72%",
-    "message": "El curso muestra una estructura sólida con oportunidades de mejora",
+    "analysisDate": "2025-11-03",
+    "overallRating": "VERY GOOD ⭐⭐⭐⭐",
+    "score": "85%",
+    "message": "El curso presenta una estructura sólida con buen balance pedagógico y alineamiento con los ODS",
     "executiveSummary": {
       "totalWeeks": 12,
       "totalHours": 70,
@@ -376,183 +372,189 @@ Generates a complete report on course performance and quality based on statistic
       "totalActivitiesAnalyzed": 100
     },
     "detailedAnalysis": {
-      "cognitiveProcesses": "Balance adecuado con 30% en niveles superiores...",
-      "transversalCompetencies": "Buena diversidad de competencias trabajadas...",
-      "modalityBalance": "Predominancia presencial con espacio para virtualidad...",
-      "teachingStrategies": "Variedad metodológica con 5 estrategias diferentes...",
-      "resources": "Recursos tradicionales y digitales balanceados...",
-      "sdgLinkage": "Fuerte vinculación con ODS 4 (Educación de Calidad)"
+      "cognitiveProcesses": "Excelente distribución con 30% en niveles superiores (ANALYZE, EVALUATE, CREATE), lo cual favorece el pensamiento crítico y la innovación...",
+      "transversalCompetencies": "Buena diversidad de competencias transversales con balance equilibrado entre las 4 principales...",
+      "modalityBalance": "Balance adecuado entre presencial (50%) y formatos alternativos, favoreciendo la flexibilidad...",
+      "teachingStrategies": "Variedad metodológica destacable con 5 estrategias diferentes, aunque LECTURE sigue siendo predominante...",
+      "resources": "Diversidad apropiada de recursos tradicionales y digitales...",
+      "sdgLinkage": "Fuerte alineamiento con ODS 4 (Educación de calidad - 60%), complementado con ODS 8 y 9 relacionados con innovación y desarrollo profesional"
     },
     "strengths": [
-      "Excelente balance de competencias transversales",
-      "Diversidad de estrategias de enseñanza",
-      "Fuerte vinculación con ODS relevantes"
+      "Excelente balance en procesos cognitivos con 30% en niveles superiores",
+      "Uso diversificado de estrategias de enseñanza (5 diferentes)",
+      "Fuerte vinculación con ODS 4 (Educación de calidad)",
+      "Buen balance de competencias transversales"
     ],
     "improvementAreas": [
-      "Aumentar actividades de nivel CREATE",
-      "Incrementar uso de modalidades híbridas",
-      "Diversificar recursos digitales"
+      "Aumentar actividades de nivel CREATE (actualmente 5%)",
+      "Fortalecer la vinculación con el sector productivo",
+      "Incrementar recursos digitales interactivos"
     ]
   },
   "recommendations": [
-    "📈 Aumentar de 5% a 15% las actividades de nivel CREATE para fomentar innovación",
-    "💻 Incorporar más recursos digitales interactivos para el aprendizaje virtual",
-    "🔄 Implementar al menos 2 actividades en modalidad híbrida por semana",
-    "🎯 Incluir más evaluaciones formativas continuas"
+    "📊 Incluir más actividades de evaluación entre pares para fortalecer el aprendizaje colaborativo",
+    "🔬 Diseñar al menos una actividad práctica vinculada con empresas del sector tecnológico",
+    "📚 Incorporar casos de estudio reales de la industria del software",
+    "🎯 Añadir rúbricas detalladas para las actividades de creación",
+    "💻 Integrar herramientas colaborativas online para trabajo en equipo",
+    "🌐 Considerar implementar un proyecto final que aborde un ODS específico"
   ],
-  "overallRating": "GOOD ⭐⭐⭐"
+  "overallRating": "VERY GOOD ⭐⭐⭐⭐"
 }
 ```
 
 ---
 
-## 🏥 System Endpoints
+## 🔑 Enumerations Reference
 
-### **GET** `/`
-Basic service information.
+### Shift
+- `MORNING` - Turno mañana
+- `EVENING` - Turno tarde/noche
 
-#### Response:
-```json
-{
-  "message": "UTEC Planificador AI Agent",
-  "status": "online",
-  "version": "0.1.0"
-}
-```
+### PartialGradingSystem
+- `PGS_1` a `PGS_12` - Sistemas de calificación parcial
 
----
+### SustainableDevelopmentGoals (SDGs)
+- `SDG_1`: Fin de la pobreza
+- `SDG_2`: Hambre cero
+- `SDG_3`: Salud y bienestar
+- `SDG_4`: **Educación de calidad**
+- `SDG_5`: Igualdad de género
+- `SDG_6`: Agua limpia y saneamiento
+- `SDG_7`: Energía asequible y no contaminante
+- `SDG_8`: **Trabajo decente y crecimiento económico**
+- `SDG_9`: **Industria, innovación e infraestructura**
+- `SDG_10`: Reducción de las desigualdades
+- `SDG_11`: Ciudades y comunidades sostenibles
+- `SDG_12`: Producción y consumo responsables
+- `SDG_13`: Acción por el clima
+- `SDG_14`: Vida submarina
+- `SDG_15`: Vida de ecosistemas terrestres
+- `SDG_16`: Paz, justicia e instituciones sólidas
+- `SDG_17`: Alianzas para lograr los objetivos
 
-### **GET** `/health`
-Service health check.
+### UniversalDesignLearningPrinciples
+- `MEANS_OF_ENGAGEMENT` - Múltiples medios de motivación
+- `MEANS_OF_REPRESENTATION` - Múltiples medios de representación
+- `MEANS_OF_ACTION_EXPRESSION` - Múltiples medios de acción y expresión
+- `NONE` - Sin principio específico
 
-#### Response:
-```json
-{
-  "status": "healthy"
-}
-```
+### CognitiveProcess
+- `REMEMBER` - Recordar (nivel básico)
+- `UNDERSTAND` - Comprender (nivel básico)
+- `APPLY` - Aplicar (nivel medio)
+- `ANALYZE` - Analizar (nivel superior)
+- `EVALUATE` - Evaluar (nivel superior)
+- `CREATE` - Crear (nivel superior)
+- `NOT_DETERMINED` - No determinado
 
----
+### TransversalCompetency
+- `COMMUNICATION` - Comunicación efectiva
+- `TEAMWORK` - Trabajo en equipo
+- `LEARNING_SELF_REGULATION` - Autorregulación del aprendizaje
+- `CRITICAL_THINKING` - Pensamiento crítico
+- `NOT_DETERMINED` - No determinado
 
-## 📌 Important Notes
+### LearningModality
+- `VIRTUAL` - Virtual/Online
+- `IN_PERSON` - Presencial
+- `SIMULTANEOUS_IN_PERSON_VIRTUAL` - Híbrido simultáneo
+- `AUTONOMOUS` - Autónomo
+- `NOT_DETERMINED` - No determinado
 
-### Enums (matching Java Backend)
+### TeachingStrategy
+- `LECTURE` - Clase expositiva
+- `DEBATE` - Debate
+- `TEAMWORK` - Trabajo en equipo
+- `FIELD_ACTIVITY` - Actividad de campo
+- `PRACTICAL_ACTIVITY` - Actividad práctica
+- `LABORATORY_PRACTICES` - Prácticas de laboratorio
+- `TESTS` - Pruebas/Evaluaciones
+- `RESEARCH_ACTIVITIES` - Actividades de investigación
+- `FLIPPED_CLASSROOM` - Aula invertida
+- `DISCUSSION` - Discusión
+- `SMALL_GROUP_TUTORIALS` - Tutorías en grupos pequeños
+- `PROJECTS` - Proyectos
+- `CASE_STUDY` - Estudio de casos
+- `OTHER` - Otra estrategia
+- `NOT_DETERMINED` - No determinado
 
-#### Shift
-- `MORNING`
-- `EVENING`
-
-#### Delivery Format
-- `IN_PERSON`
-- `VIRTUAL`
-- `HYBRID`
-
-#### Partial Grading System
-- `PGS_1` through `PGS_12`
-
-#### Sustainable Development Goals
-- `SDG_1` through `SDG_17`
-
-#### Universal Design Learning Principles
-- `MEANS_OF_ENGAGEMENT`
-- `MEANS_OF_REPRESENTATION`
-- `MEANS_OF_ACTION_EXPRESSION`
-- `NONE`
-
-#### Cognitive Processes (Bloom's Taxonomy)
-- `REMEMBER`
-- `UNDERSTAND`
-- `APPLY`
-- `ANALYZE`
-- `EVALUATE`
-- `CREATE`
-- `NOT_DETERMINED`
-
-#### Transversal Competencies
-- `COMMUNICATION`
-- `TEAMWORK`
-- `LEARNING_SELF_REGULATION`
-- `CRITICAL_THINKING`
-- `NOT_DETERMINED`
-
-#### Learning Modalities
-- `VIRTUAL`
-- `IN_PERSON`
-- `SIMULTANEOUS_IN_PERSON_VIRTUAL`
-- `AUTONOMOUS`
-- `NOT_DETERMINED`
-
-#### Teaching Strategies
-- `LECTURE`
-- `DEBATE`
-- `TEAMWORK`
-- `FIELD_ACTIVITY`
-- `PRACTICAL_ACTIVITY`
-- `LABORATORY_PRACTICES`
-- `TESTS`
-- `RESEARCH_ACTIVITIES`
-- `FLIPPED_CLASSROOM`
-- `DISCUSSION`
-- `SMALL_GROUP_TUTORIALS`
-- `PROJECTS`
-- `CASE_STUDY`
-- `OTHER`
-- `NOT_DETERMINED`
-
-#### Learning Resources
-- `EXHIBITION`
-- `BOOK_DOCUMENT`
-- `DEMONSTRATION`
-- `WHITEBOARD`
-- `ONLINE_COLLABORATION_TOOL`
-- `ONLINE_LECTURE`
-- `ONLINE_FORUM`
-- `ONLINE_EVALUATION`
-- `GAME`
-- `SURVEY`
-- `VIDEO`
-- `INFOGRAPHIC`
-- `WEBPAGE`
-- `OTHER`
-- `NOT_DETERMINED`
+### LearningResource
+- `EXHIBITION` - Exposición/Presentación
+- `BOOK_DOCUMENT` - Libro/Documento
+- `DEMONSTRATION` - Demostración
+- `WHITEBOARD` - Pizarra
+- `ONLINE_COLLABORATION_TOOL` - Herramienta de colaboración online
+- `ONLINE_LECTURE` - Clase online
+- `ONLINE_FORUM` - Foro online
+- `ONLINE_EVALUATION` - Evaluación online
+- `GAME` - Juego educativo
+- `SURVEY` - Encuesta
+- `VIDEO` - Video
+- `INFOGRAPHIC` - Infografía
+- `WEBPAGE` - Página web
+- `OTHER` - Otro recurso
+- `NOT_DETERMINED` - No determinado
 
 ---
 
-## 🚀 Usage Examples with cURL
+## 📝 Important Notes
 
-### Chatbot
+### Chat Endpoint Updates
+- **Planificación opcional**: Si se proporciona una planificación en el request del chat, el asistente tendrá contexto adicional para dar respuestas más específicas y personalizadas sobre esa planificación en particular.
+- **Sin planificación**: El chat funciona normalmente respondiendo preguntas generales sobre pedagogía basándose en la documentación disponible.
+
+### Report Endpoint Updates
+- **Planificación obligatoria**: Ahora el reporte requiere TANTO las estadísticas como la planificación completa.
+- **Análisis más profundo**: Con acceso a la planificación completa, el sistema puede generar análisis más detallados y contextualizados, correlacionando las estadísticas con el contenido real del curso.
+- **Recomendaciones específicas**: Las sugerencias serán más precisas al tener visibilidad completa de las actividades, recursos y estrategias utilizadas.
+
+### Suggestions Endpoint
+- **Sin cambios**: Mantiene su funcionalidad original, siempre requiriendo una planificación completa para generar sugerencias pedagógicas.
+
+### SDG Integration
+- El sistema comprende el significado completo de cada ODS (Objetivo de Desarrollo Sostenible).
+- Puede analizar y sugerir cómo integrar mejor los ODS en las planificaciones.
+- Evalúa la coherencia entre los ODS declarados y las actividades reales del curso.
+
+---
+
+## 🚀 Quick Start Examples
+
+### 1. Consulta general sin planificación
 ```bash
 curl -X POST http://localhost:8000/agent/chat/message \
   -H "Content-Type: application/json" \
   -d '{
-    "session_id": "profesor_001",
-    "message": "¿Cómo implemento el Aprendizaje Basado en Problemas?"
+    "session_id": "test_001",
+    "message": "¿Qué es el aprendizaje basado en proyectos?"
   }'
 ```
 
-### Suggestions
+### 2. Consulta con contexto de planificación
+```bash
+curl -X POST http://localhost:8000/agent/chat/message \
+  -H "Content-Type: application/json" \
+  -d @request_with_planning.json
+```
+
+### 3. Generar sugerencias
 ```bash
 curl -X POST http://localhost:8000/agent/suggestions \
   -H "Content-Type: application/json" \
   -d @course_planning.json
 ```
 
-### Report
+### 4. Generar reporte completo
 ```bash
 curl -X POST http://localhost:8000/agent/report/generate \
   -H "Content-Type: application/json" \
-  -d @statistics.json
+  -d @report_request.json
 ```
 
 ---
 
-## ⚙️ Required Environment Variables
+## 📧 Support
 
-Make sure you have configured the `.env` file:
-
-```env
-OPENAI_API_KEY=your_key_here
-```
-
-- `OPENAI_API_KEY`: Your OpenAI API key
+For issues or questions, please contact the development team.
 

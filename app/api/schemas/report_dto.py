@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Dict, List
+from .planification_dto import CoursePlanningDTO
 
 class CourseStatisticsDTO(BaseModel):
     """Statistics extracted from a course planning for analysis"""
@@ -18,6 +19,7 @@ class CourseStatisticsDTO(BaseModel):
 class ReportRequest(BaseModel):
     courseId: str
     statistics: CourseStatisticsDTO
+    coursePlanning: CoursePlanningDTO
 
 class ReportResponse(BaseModel):
     success: bool = True
