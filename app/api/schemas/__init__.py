@@ -1,14 +1,14 @@
 from .chat_dto import ChatRequest
-from .planificacion_dto import PlanificacionRequestDTO, PlanificacionDocenteDTO
+from .planification_dto import CoursePlanningRequestDTO, CoursePlanningDTO
 from .suggestion_dto import SuggestionResponse
-from .report_dto import ReportRequest, ReportResponse, EstadisticasCursoDTO
+from .report_dto import ReportRequest, ReportResponse, CourseStatisticsDTO
 
 __all__ = [
     "ChatRequest",
-    "PlanificacionRequestDTO",
-    "PlanificacionDocenteDTO",
+    "CoursePlanningRequestDTO",
+    "CoursePlanningDTO",
     "SuggestionResponse",
     "ReportRequest",
     "ReportResponse",
-    "EstadisticasCursoDTO",
+    "CourseStatisticsDTO",
 ]

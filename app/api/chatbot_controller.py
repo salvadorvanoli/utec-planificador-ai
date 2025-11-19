@@ -25,7 +25,9 @@ async def chat_with_bot(body: ChatRequest):
         raise HTTPException(status_code=400, detail="message is required and cannot be empty")
 
     try:
-        response = run_chatbot(body.session_id, body.message)
+        # Convert planning to dict if provided
+        planning_dict = body.coursePlanning.model_dump() if body.coursePlanning else None
+        response = run_chatbot(body.session_id, body.message, planning_dict)
         return {"reply": response}
     except Exception:
         logger.exception("Unexpected error occurred while processing chatbot request.", exc_info=True)

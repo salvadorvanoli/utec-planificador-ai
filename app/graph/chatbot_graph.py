@@ -27,7 +27,17 @@ class ReactAgentWrapper:
             "Eres un asistente pedagógico llamado UTEC-Planificador. Responde en español y de forma concisa.\n"
             "Tu objetivo principal es: 1) sugerir mejoras pedagógicas para planificaciones docentes, 2) detectar inconsistencias pedagógicas básicas, 3) responder consultas de los docentes sobre el uso del planificador.\n"
             "Si el usuario solicita analizar una planificación, devuelve observaciones claras y accionables.\n"
-            "Cuando utilices herramientas locales, integra sus resultados en una respuesta humana y coherente."
+            "Cuando utilices herramientas locales, integra sus resultados en una respuesta humana y coherente.\n\n"
+            "IMPORTANTE: Conoces a fondo los ODS (Objetivos de Desarrollo Sostenible / SDGs):\n"
+            "- SDG_4: Educación de calidad - Garantizar una educación inclusiva, equitativa y de calidad\n"
+            "- SDG_8: Trabajo decente y crecimiento económico - Promover el empleo pleno y productivo\n"
+            "- SDG_9: Industria, innovación e infraestructura - Fomentar la innovación\n"
+            "- SDG_1: Fin de la pobreza | SDG_2: Hambre cero | SDG_3: Salud y bienestar\n"
+            "- SDG_5: Igualdad de género | SDG_6: Agua limpia y saneamiento | SDG_7: Energía asequible\n"
+            "- SDG_10: Reducción de desigualdades | SDG_11: Ciudades sostenibles | SDG_12: Producción responsable\n"
+            "- SDG_13: Acción por el clima | SDG_14: Vida submarina | SDG_15: Vida terrestre\n"
+            "- SDG_16: Paz y justicia | SDG_17: Alianzas para los objetivos\n"
+            "Cuando un docente mencione un ODS, entiende su significado completo y cómo puede integrarse en la planificación."
         )
 
     def _call_openai(self, messages: list, model: str = "gpt-4o-mini") -> str:
@@ -67,20 +77,38 @@ class ReactAgentWrapper:
 
         user_text = state.input or ""
 
+        # Check if planning context is available
+        planning_context = ""
+        if state.planning:
+            import json
+            planning_json = json.dumps(state.planning, indent=2, ensure_ascii=False)
+            planning_context = f"\n\nCONTEXTO DE PLANIFICACIÓN PROPORCIONADA:\n{planning_json}\n"
+
         # Simple tool routing based on keywords
         lower = user_text.lower()
         tool_response = None
         if any(k in lower for k in ["analiz", "analizar", "analisis", "revisión", "revisión"]):
-            # call planner analysis tool — pass only the user text or planning text
-            tool_response = analyze_planificacion(user_text)
+            # call planner analysis tool — pass the user text, and planning if available
+            analysis_input = user_text
+            if state.planning:
+                analysis_input = f"{user_text}\n\nPlanificación disponible: {planning_context}"
+            tool_response = analyze_planificacion(analysis_input)
         elif any(k in lower for k in ["suger", "sugerencia", "pedagog", "retroaliment", "feedback", "rúbrica", "rubrica"]):
-            tool_response = get_pedagogical_help(user_text)
+            help_input = user_text
+            if state.planning:
+                help_input = f"{user_text}\n\nPlanificación disponible: {planning_context}"
+            tool_response = get_pedagogical_help(help_input)
 
         if tool_response:
             # integrate tool output and call LLM to format final response
-            messages.append({"role": "user", "content": f"Herramienta: {tool_response}\n\nUsuario: {user_text}"})
+            full_context = f"Herramienta: {tool_response}{planning_context}\n\nUsuario: {user_text}"
+            messages.append({"role": "user", "content": full_context})
         else:
-            messages.append({"role": "user", "content": user_text})
+            # If no tool but planning is available, add it as context
+            full_input = user_text
+            if planning_context:
+                full_input = f"{user_text}{planning_context}"
+            messages.append({"role": "user", "content": full_input})
 
         try:
             reply = self._call_openai(messages)

@@ -7,11 +7,12 @@ session_store = {}
 chatbot_graph = ReactAgentWrapper()
 
 
-def run_chatbot(session_id: str, user_message: str) -> str:
+def run_chatbot(session_id: str, user_message: str, planning: dict = None) -> str:
     state = ChatState(
         session_id=session_id,
         input=user_message,
-        history=[]
+        history=[],
+        planning=planning
     )
 
     result_dict = chatbot_graph.invoke(state)
