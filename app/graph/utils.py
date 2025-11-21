@@ -52,7 +52,10 @@ def start_cleanup_thread():
     """Inicia el thread de limpieza en segundo plano"""
     cleanup_thread = threading.Thread(target=background_cleanup_task, daemon=True)
     cleanup_thread.start()
-    logger.info(f"Thread de limpieza automática iniciado (cada {CLEANUP_INTERVAL_SECONDS}s)")
+    log_msg = f"Thread de limpieza automática iniciado (cada {CLEANUP_INTERVAL_SECONDS}s, timeout {SESSION_TIMEOUT_MINUTES}min)"
+    logger.info(log_msg)
+    # También imprimir para asegurar visibilidad durante startup
+    print(f"[STARTUP] {log_msg}")
 
 
 def get_or_create_history(session_id: str) -> InMemoryHistory:
