@@ -20,7 +20,7 @@ def get_or_create_history(session_id: str) -> InMemoryHistory:
     current_time = datetime.now()
     expired_sessions = [
         sid for sid, (history, timestamp) in session_memory_store.items()
-        if current_time - timestamp > timedelta(hours=24)
+        if current_time - timestamp > timedelta(minutes=20)
     ]
     for sid in expired_sessions:
         del session_memory_store[sid]
