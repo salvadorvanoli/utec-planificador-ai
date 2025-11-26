@@ -315,23 +315,6 @@ Este microservicio se enfoca exclusivamente en:
    - Gestión de prompts especializados
    - Validación de relevancia educativa
 
-### Flujo de Integración Típico
-
-```
-┌──────────┐     ┌─────────────────┐     ┌──────────────┐     ┌──────────┐
-│ Frontend │────▶│ Backend Java    │────▶│ Microservicio│────▶│ OpenAI   │
-│          │     │ (Spring Boot)   │     │ IA (FastAPI) │     │ API      │
-└──────────┘     └─────────────────┘     └──────────────┘     └──────────┘
-     ▲                  │                        │                   │
-     │                  │                        │                   │
-     │                  ▼                        ▼                   ▼
-     │           ┌─────────────┐         ┌────────────┐      ┌──────────┐
-     │           │ Base de     │         │ Historial  │      │ GPT-4o   │
-     └───────────│ Datos       │         │ en Memoria │      │ mini     │
-                 │ (PostgreSQL)│         │ (Temporal) │      └──────────┘
-                 └─────────────┘         └────────────┘
-```
-
 ### Ejemplo de Integración: Generar Sugerencias
 
 **Backend Java (planificador-utec-be):**
