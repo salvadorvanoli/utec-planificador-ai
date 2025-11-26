@@ -1,6 +1,6 @@
-# 📚 UTEC Planificador AI - Documentación Completa
+# 📚 UTEC Planificador AI
 
-**Versión:** 0.1.0  
+**Versión:** 1.0.0  
 **Fecha:** 26 de Noviembre, 2025  
 **Repositorio:** utec-planificador-ai
 
