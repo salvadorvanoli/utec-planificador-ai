@@ -1,0 +1,95 @@
+# =============================================================================
+# .dockerignore para AI Agent - Planificador Docente UTEC
+# =============================================================================
+# Excluye archivos innecesarios para reducir el tamaño de la imagen Docker
+# y evitar filtración de información sensible.
+# =============================================================================
+
+# === Control de versiones ===
+.git
+.gitignore
+.gitattributes
+
+# === IDEs y editores ===
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# === Python y entornos virtuales ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.hypothesis/
+venv/
+.venv/
+ENV/
+env/
+*.virtualenv
+
+# === Variables de entorno (CRÍTICO - nunca incluir!) ===
+.env
+.env.*
+!.env.example
+
+# === Docker ===
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# === Documentación ===
+*.md
+docs/
+README.md
+CONTRIBUTING.md
+
+# === Logs ===
+*.log
+logs/
+
+# === Sistema operativo ===
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# === Testing ===
+tests/
+test_*.py
+*_test.py
+pytest.ini
+coverage.xml
+
+# === Archivos temporales ===
+*.bak
+*.tmp
+*.backup
+tmp/
+temp/
+
+# === Scripts de desarrollo ===
+scripts/
+
+# === CI/CD ===
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile

@@ -1,0 +1,19 @@
+# Development overrides (auto-merged with docker-compose.yml)
+services:
+  ai-agent:
+    build:
+      target: runtime
+    
+    environment:
+      LOG_LEVEL: DEBUG
+      PYTHONUNBUFFERED: "1"
+    
+    volumes:
+      - ./app:/app/app:ro
+      - ./main.py:/app/main.py:ro
+      - ./logs:/app/logs
+    
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    
+    labels:
+      - "com.utec.environment=development"

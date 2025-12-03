@@ -1,0 +1,47 @@
+services:
+  ai-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    
+    container_name: ${COMPOSE_PROJECT_NAME:-planificador}-ai-agent
+    restart: unless-stopped
+    
+    labels:
+      - "com.utec.project=planificador-docente"
+      - "com.utec.component=ai-agent"
+      - "com.utec.environment=development"
+      - "com.utec.framework=fastapi"
+      - "com.utec.version=1.0.0"
+    
+    environment:
+      OPENAI_KEY: ${OPENAI_KEY}
+      
+      SESSION_TIMEOUT_MINUTES: ${SESSION_TIMEOUT_MINUTES:-20}
+      CLEANUP_INTERVAL_SECONDS: ${CLEANUP_INTERVAL_SECONDS:-300}
+      
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    
+    ports:
+      - "${AI_AGENT_PORT:-8000}:8000"
+    
+    networks:
+      - ai-network
+      - utec-shared
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: ${HEALTHCHECK_INTERVAL:-30s}
+      timeout: ${HEALTHCHECK_TIMEOUT:-10s}
+      retries: ${HEALTHCHECK_RETRIES:-3}
+      start_period: ${HEALTHCHECK_START_PERIOD:-40s}
+
+networks:
+  ai-network:
+    driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-planificador}-ai-network
+  
+  utec-shared:
+    external: true
+    name: utec-shared-network

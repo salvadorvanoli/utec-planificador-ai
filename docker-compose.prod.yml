@@ -1,0 +1,46 @@
+# Production configuration
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+  ai-agent:
+    restart: always
+    
+    labels:
+      - "com.utec.project=planificador-docente"
+      - "com.utec.component=ai-agent"
+      - "com.utec.environment=production"
+      - "com.utec.framework=fastapi"
+      - "com.utec.version=1.0.0"
+    
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SESSION_TIMEOUT_MINUTES: ${SESSION_TIMEOUT_MINUTES:-30}
+      CLEANUP_INTERVAL_SECONDS: ${CLEANUP_INTERVAL_SECONDS:-300}
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    deploy:
+      resources:
+        limits:
+          cpus: ${AI_AGENT_CPU_LIMIT:-2}
+          memory: ${AI_AGENT_MEMORY_LIMIT:-2G}
+        reservations:
+          cpus: ${AI_AGENT_CPU_RESERVATION:-1}
+          memory: ${AI_AGENT_MEMORY_RESERVATION:-1G}
+      
+      restart_policy:
+        condition: ${RESTART_POLICY_CONDITION:-on-failure}
+        delay: ${RESTART_POLICY_DELAY:-5s}
+        max_attempts: ${RESTART_POLICY_MAX_ATTEMPTS:-3}
+        window: ${RESTART_POLICY_WINDOW:-120s}
+    
+    logging:
+      driver: ${LOG_DRIVER:-json-file}
+      options:
+        max-size: ${LOG_MAX_SIZE:-10m}
+        max-file: ${LOG_MAX_FILE:-3}
+    
+    volumes:
+      - ./logs:/app/logs
+    
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
