@@ -28,8 +28,7 @@ def generate_basic_report(course_id: str, statistics: Dict[str, Any], planning: 
         return {
             "success": False,
             "report": {"error": "OpenAI API Key not configured"},
-            "recommendations": ["Please configure OPENAI_KEY in the .env file"],
-            "overallRating": "ERROR"
+            "recommendations": ["Please configure OPENAI_KEY in the .env file"]
         }
 
     # Prepare data for GPT
@@ -98,8 +97,6 @@ def generate_basic_report(course_id: str, statistics: Dict[str, Any], planning: 
         RESPONSE FORMAT:
         Return your analysis in JSON format with this exact structure:
         {{
-          "overallRating": "One of: EXCELLENT ⭐⭐⭐⭐⭐ | VERY GOOD ⭐⭐⭐⭐ | GOOD ⭐⭐⭐ | REGULAR ⭐⭐ | NEEDS IMPROVEMENT ⭐",
-          "numericScore": 75,
           "message": "Personalized message of 1-2 lines about the general state",
           "strengths": ["List of 3-5 specific positive aspects found"],
           "improvementAreas": ["List of 2-4 areas that need strengthening"],
@@ -119,7 +116,6 @@ def generate_basic_report(course_id: str, statistics: Dict[str, Any], planning: 
         - Be specific with percentages and numbers
         - Recommendations should be actionable
         - Use emojis for better readability
-        - Numeric score should be between 0-100
         - Grade with rigorous but constructive pedagogical criteria
         - ALWAYS respond in Spanish
     """
@@ -142,8 +138,6 @@ def generate_basic_report(course_id: str, statistics: Dict[str, Any], planning: 
         report = {
             "courseId": course_id,
             "analysisDate": datetime.now().strftime("%Y-%m-%d"),
-            "overallRating": result.get("overallRating", "GOOD ⭐⭐⭐"),
-            "score": f"{result.get('numericScore', 70)}%",
             "message": result.get("message", "Analysis completed"),
             "executiveSummary": {
                 "totalWeeks": statistics.get('totalWeeks', 0),
@@ -162,8 +156,7 @@ def generate_basic_report(course_id: str, statistics: Dict[str, Any], planning: 
         return {
             "success": True,
             "report": report,
-            "recommendations": result.get("recommendations", []),
-            "overallRating": result.get("overallRating", "GOOD ⭐⭐⭐")
+            "recommendations": result.get("recommendations", [])
         }
 
     except Exception as e:
@@ -174,7 +167,6 @@ def generate_basic_report(course_id: str, statistics: Dict[str, Any], planning: 
                 "courseId": course_id,
                 "error": f"Error generating report with GPT: {str(e)}"
             },
-            "recommendations": ["Please try again or check your OpenAI configuration."],
-            "overallRating": "ERROR"
+            "recommendations": ["Please try again or check your OpenAI configuration."]
         }
 

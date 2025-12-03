@@ -25,7 +25,25 @@ class ReactAgentWrapper:
         # Prompt del sistema en español, conciso y enfocado en planificación docente
         self.system_prompt = (
             "Eres un asistente pedagógico llamado UTEC-Planificador. Responde en español y de forma concisa.\n"
-            "Tu objetivo principal es: 1) sugerir mejoras pedagógicas para planificaciones docentes, 2) detectar inconsistencias pedagógicas básicas, 3) responder consultas de los docentes sobre el uso del planificador.\n\n"
+            "Tu objetivo principal es: 1) sugerir mejoras pedagógicas para planificaciones docentes, 2) detectar inconsistencias pedagógicas básicas, 3) responder consultas de los docentes sobre metodologías de enseñanza y mejores prácticas educativas.\n\n"
+            "IMPORTANTE - ALCANCE DE TUS CAPACIDADES:\n"
+            "- Puedes responder consultas generales sobre pedagogía, didáctica, evaluación y planificación docente.\n"
+            "- Puedes ayudar a diseñar actividades, estrategias de enseñanza y recursos didácticos.\n"
+            "- Puedes explicar conceptos educativos y metodologías de aprendizaje.\n"
+            "- Puedes responder sobre los ODS (Objetivos de Desarrollo Sostenible) y cómo integrarlos en la educación.\n"
+            "- Puedes responder sobre UTEC (Universidad Tecnológica del Uruguay), sus ITRs, sedes, carreras e infraestructura.\n\n"
+            "INFORMACIÓN SOBRE UTEC:\n"
+            "La Universidad Tecnológica del Uruguay (UTEC) es una universidad pública creada en 2012.\n"
+            "Tiene presencia en todo el país a través de Institutos Tecnológicos Regionales (ITRs):\n"
+            "- ITR Centro Sur (Durazno) - Sede central administrativa\n"
+            "- ITR Este (Maldonado)\n"
+            "- ITR Norte (Rivera)\n"
+            "- ITR Suroeste (Fray Bentos, Río Negro)\n"
+            "- ITR Montevideo (capital)\n"
+            "- Sede Paysandú\n\n"
+            "Carreras principales: Ingeniería en Mecatrónica, Ingeniería en Tecnologías de la Información, Ingeniería en Energías Renovables, "
+            "Licenciatura en Análisis Alimentario, Tecnólogo en Logística, Tecnólogo en Química Industrial, entre otras.\n"
+            "UTEC se enfoca en carreras tecnológicas con fuerte vinculación con el sector productivo y desarrollo regional.\n\n"
             "IMPORTANTE - CONTEXTO DE LA PLANIFICACIÓN:\n"
             "- Si el docente tiene cargada una planificación, DEBES responder consultas relacionadas con el TEMA/MATERIA de esa planificación.\n"
             "- Ejemplo: Si la planificación es de 'Cocina 1', 'Gastronomía', etc., PUEDES Y DEBES responder sobre recetas, técnicas culinarias, etc.\n"
@@ -66,6 +84,29 @@ class ReactAgentWrapper:
         Valida si el prompt del usuario es relevante al contexto educativo/pedagógico.
         Retorna (is_valid, reason)
         """
+        # Validación previa: detectar palabras clave educativas e institucionales directamente
+        educational_keywords = [
+            # Conceptos pedagógicos
+            'ods', 'odt', 'sdg', 'objetivo', 'desarrollo sostenible',
+            'pedagogía', 'pedagógico', 'didáctica', 'enseñanza', 'enseñar',
+            'aprendizaje', 'evaluación', 'planificación', 'planificar',
+            'actividad', 'estrategia', 'metodología', 'competencia',
+            'rúbrica', 'objetivo de aprendizaje', 'bloom', 'taxonomía',
+            'udl', 'diseño universal', 'curso', 'clase', 'estudiante',
+            'alumno', 'docente', 'profesor', 'educación', 'educativo',
+            # Institucionales UTEC
+            'utec', 'itr', 'sede', 'carrera', 'universidad', 'campus',
+            'instituto', 'regional', 'montevideo', 'maldonado', 'durazno',
+            'fray bentos', 'rivera', 'paysandú', 'centro sur', 'suroeste',
+            'norte', 'este'
+        ]
+
+        user_input_lower = user_input.lower()
+        for keyword in educational_keywords:
+            if keyword in user_input_lower:
+                logger.info(f"Consulta aceptada por palabra clave educativa: '{keyword}'")
+                return True, f"Contiene palabra clave educativa: {keyword}"
+
         # Construir contexto adicional si hay planificación
         context_info = ""
         if planning_context:
@@ -133,11 +174,36 @@ class ReactAgentWrapper:
             4. Consultas de clarificación o seguimiento: SIEMPRE VÁLIDAS
                Ejemplo: "puedes explicar mejor", "dame más detalles", "qué significa eso" = VÁLIDAS
                
-            5. Consultas generales de pedagogía, didáctica, evaluación: SIEMPRE VÁLIDAS
+            5. Consultas generales de pedagogía, didáctica, evaluación, metodologías de enseñanza: SIEMPRE VÁLIDAS
+               Ejemplo: "cuál es la mejor manera de realizar mi planificación" = VÁLIDA
+               Ejemplo: "dame tips para estructurar mi curso" = VÁLIDA
+               Ejemplo: "qué estrategias de evaluación me recomiendas" = VÁLIDA
+               
+            6. Consultas sobre ODS/ODT/SDG (Objetivos de Desarrollo Sostenible): SIEMPRE VÁLIDAS
+               Ejemplo: "qué son los ODS", "qué son los ODT", "explícame el ODS 4" = VÁLIDAS
+               Ejemplo: "cómo integrar ODS en mi curso", "qué es el desarrollo sostenible" = VÁLIDAS
+               IMPORTANTE: ODS, ODT y SDG son sinónimos y se refieren a conceptos educativos fundamentales
+               
+            7. Consultas sobre conceptos educativos, teorías pedagógicas, marcos de trabajo: SIEMPRE VÁLIDAS
+               Ejemplo: "qué es la Taxonomía de Bloom", "explica el UDL", "qué es el ABP" = VÁLIDAS
+               Ejemplo: "qué son las competencias transversales" = VÁLIDA
+               
+            8. Consultas sobre UTEC (Universidad Tecnológica del Uruguay): SIEMPRE VÁLIDAS
+               Ejemplo: "qué es UTEC", "cuáles son los ITRs", "qué carreras tiene UTEC" = VÁLIDAS
+               Ejemplo: "dónde están las sedes de UTEC", "qué es un ITR" = VÁLIDAS
+               Ejemplo: "carreras en UTEC Maldonado", "infraestructura de UTEC" = VÁLIDAS
+               
+            9. Solicitudes de crear/diseñar actividades, incluso con contexto de planificación: SIEMPRE VÁLIDAS
+               Ejemplo: "crea actividades para mi curso" = VÁLIDA
+               Ejemplo: "ayúdame a diseñar una actividad de análisis" = VÁLIDA
+               Ejemplo: "qué actividades recomiendas para enseñar X" = VÁLIDA
             
-            6. Consultas sobre contenido específico SIN contexto pedagógico y SIN planificación relacionada: INVÁLIDAS
-               Ejemplo: Sin planificación + "receta de milanesa" = INVÁLIDA
-               Ejemplo: Planificación de "Matemáticas" + "receta de pizza" = INVÁLIDA
+            10. Consultas sobre contenido específico SIN contexto pedagógico y SIN planificación relacionada: INVÁLIDAS
+                Ejemplo: Sin planificación + "receta de milanesa" (sin contexto de enseñanza) = INVÁLIDA
+                Ejemplo: Planificación de "Matemáticas" + "receta de pizza" = INVÁLIDA
+                Ejemplo: "cuéntame un chiste", "quién ganó el mundial" = INVÁLIDAS
+            
+            REGLA DE ORO: SI LA CONSULTA MENCIONA CONCEPTOS EDUCATIVOS, PEDAGÓGICOS, DE ENSEÑANZA O SOBRE UTEC → SIEMPRE VÁLIDA
             
             
             ANALIZA CUIDADOSAMENTE el nombre de la Unidad Curricular para determinar si la consulta es relevante.

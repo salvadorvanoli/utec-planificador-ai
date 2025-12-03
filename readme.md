@@ -1,8 +1,31 @@
 # 📚 UTEC Planificador AI
 
-**Versión:** 1.0.0  
-**Fecha:** 26 de Noviembre, 2025  
+**Versión:** 1.1.0  
+**Fecha:** 3 de Diciembre, 2025  
 **Repositorio:** utec-planificador-ai
+
+---
+
+## 🆕 Cambios Recientes (v1.1.0)
+
+### 📊 Sistema de Reportes
+- **Eliminado:** `overallRating` y `numericScore` de los reportes generados
+- **Enfoque:** Evaluación cualitativa basada en análisis pedagógico profundo
+- **Beneficio:** Los reportes ahora se centran en análisis descriptivo y recomendaciones accionables en lugar de calificaciones numéricas
+
+### 💬 Chatbot Pedagógico - Validación Mejorada
+- **Mejorado:** Sistema de validación en dos etapas más permisivo
+- **Nueva capacidad:** Detección directa de palabras clave educativas e institucionales
+- **Consultas ahora aceptadas:**
+  - ✅ Preguntas generales sobre metodologías de planificación ("¿Cuál es la mejor manera de realizar mi planificación?")
+  - ✅ Solicitudes de creación de actividades con o sin contexto de planificación
+  - ✅ Preguntas sobre ODS/ODT/SDG ("¿Qué son los ODS?", "¿Qué son los ODT?")
+  - ✅ Consultas sobre conceptos pedagógicos (Bloom, UDL, ABP, competencias, etc.)
+  - ✅ **Preguntas sobre UTEC, ITRs, sedes, carreras e infraestructura institucional** (Nuevo)
+- **Mejora técnica:**
+  1. **Etapa 1:** Detección directa de palabras clave (ODS, ODT, UTEC, ITR, pedagogía, etc.)
+  2. **Etapa 2:** Validación por LLM para casos ambiguos
+- **Beneficio:** Docentes pueden obtener ayuda integral sobre pedagogía, planificación y aspectos institucionales sin rechazos incorrectos
 
 ---
 
@@ -647,12 +670,11 @@ Analiza una planificación completa y genera sugerencias pedagógicas basadas en
 ```json
 {
   "analysis": "📊 **Análisis de la Planificación del Curso**\n\n✅ **Fortalezas identificadas:**\n- Buena distribución de horas (40 presenciales, 20 virtuales, 10 híbridas)\n- Vinculación con ODS 4, 8 y 9\n- Aplicación de los 3 principios UDL\n\n⚠️ **Áreas de oportunidad:**\n- Solo 15% de actividades en niveles cognitivos superiores (ANALYZE, EVALUATE, CREATE)\n- Alta concentración en LECTURE (45% de las estrategias)\n- Recursos digitales limitados",
-  "pedagogicalSuggestions": "1. 🎯 Incrementar actividades de análisis y creación al 30-40% del total\n2. 💡 Diversificar estrategias: incorporar más CASE_STUDY, PROJECTS y FLIPPED_CLASSROOM\n3. 🌐 Añadir recursos digitales interactivos (simuladores, plataformas colaborativas)\n4. 🔬 Diseñar al menos 2 actividades vinculadas con el sector productivo\n5. 📊 Implementar rúbricas detalladas para actividades de creación\n6. 🤝 Fortalecer trabajo colaborativo en modalidad virtual"
-}
-```
+- 📊 Análisis detallado por criterio pedagógico
 
 **Códigos de Estado:**
 - `200`: Análisis exitoso
+- 📈 Evaluación cualitativa basada en estándares educativos
 - `400`: Planificación no proporcionada o inválida
 - `500`: Error en el análisis
 
@@ -665,12 +687,11 @@ Analiza una planificación completa y genera sugerencias pedagógicas basadas en
 Genera un reporte completo de calidad educativa basado en estadísticas del curso y la planificación completa.
 
 **Características:**
-- ⭐ Calificación general (EXCELLENT a NEEDS IMPROVEMENT)
-- 📈 Score numérico (0-100)
-- 📊 Análisis detallado por criterio
+- 📊 Análisis detallado por criterio pedagógico
 - 💪 Identificación de fortalezas
 - 🎯 Áreas de mejora
 - 💡 Recomendaciones específicas y accionables
+- 📈 Evaluación cualitativa basada en estándares educativos
 
 **Request Body:**
 
@@ -716,13 +737,9 @@ Genera un reporte completo de calidad educativa basado en estadísticas del curs
       "SDG_8": 20,
       "SDG_9": 20
     },
-    "averageActivityDurationInMinutes": 65,
     "totalWeeks": 12,
     "totalInPersonHours": 40,
     "totalVirtualHours": 20,
-    "totalHybridHours": 10
-  },
-  "coursePlanning": {
     // Planificación completa (mismo formato que /suggestions)
   }
 }
@@ -733,13 +750,9 @@ Genera un reporte completo de calidad educativa basado en estadísticas del curs
 ```json
 {
   "success": true,
-  "overallRating": "VERY GOOD ⭐⭐⭐⭐",
   "report": {
     "courseId": "PROG101-2024",
     "analysisDate": "2025-11-26",
-    "overallRating": "VERY GOOD ⭐⭐⭐⭐",
-    "score": "85%",
-    "numericScore": 85,
     "message": "El curso presenta una estructura sólida con buen balance pedagógico",
     "executiveSummary": {
       "totalWeeks": 12,
@@ -859,18 +872,28 @@ Enviar prompt + contexto al validador LLM (GPT-4o-mini)
    - "¿Qué estrategias usar para evaluar competencias?"
    - "Dame ejemplos de rúbricas analíticas"
    - "¿Cómo implementar el aula invertida?"
+   - "¿Cuál es la mejor manera de realizar mi planificación?"
+   - "Dame tips para estructurar mi curso"
 
 2. **Consultas sobre planificación docente:**
    - "Ayúdame a diseñar objetivos de aprendizaje"
    - "¿Cómo integrar los ODS en mi planificación?"
    - "¿Qué actividades recomiendas para nivel ANALYZE?"
+   - **"Crea actividades para mi curso de X"
+   - **"Ayúdame a diseñar una actividad de análisis"
 
-3. **Consultas relacionadas al contexto de la planificación:**
-   - Con planificación de **Gastronomía**: "Dame una receta de milanesa" ✅
-   - Con planificación de **Química**: "Explica la tabla periódica" ✅
-   - Con planificación de **Educación Física**: "Reglas del básquetbol" ✅
+3. **Consultas sobre ODS (Objetivos de Desarrollo Sostenible):**
+   - "Explícame el ODS 4"
+   - "¿Cómo integrar ODS en mi curso?"
+   - "¿Qué es el desarrollo sostenible?"
+   - "Dame ejemplos de actividades alineadas con ODS 8"
 
-4. **Meta-consultas sobre la conversación:**
+4. **Consultas relacionadas al contexto de la planificación:**
+   - Con planificación de **Gastronomía**: "Dame una receta de milanesa"
+   - Con planificación de **Química**: "Explica la tabla periódica" 
+   - Con planificación de **Educación Física**: "Reglas del básquetbol" 
+
+5. **Meta-consultas sobre la conversación:**
    - "¿Cuál fue mi último mensaje?"
    - "Repite eso por favor"
    - "Explícame mejor"
@@ -1641,8 +1664,8 @@ curl -X POST "http://localhost:8000/agent/chat/message" \
 - [ ] Implementar autenticación interna entre servicios (API Key o mTLS)
 - [ ] Agregar rate limiting a nivel de microservicio
 - [ ] Métricas y monitoreo (Prometheus)
-- [ ] Tests unitarios y de integración
-
+**Última actualización:** 3 de Diciembre, 2025  
+**Versión:** 1.1.0
 ### Mediano Plazo
 
 - [ ] Persistencia de sesiones (Redis)
