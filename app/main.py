@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="UTEC Planificador AI Agent",
     description="Asistente Pedagógico con IA para el Planificador Docente de UTEC",
-    version="0.1.0",
+    version="1.1.0",
     lifespan=lifespan
 )
 
@@ -44,7 +44,7 @@ async def root():
     return {
         "message": "UTEC Planificador AI Agent",
         "status": "online",
-        "version": "0.1.0"
+        "version": "1.1.0"
     }
 
 @app.get("/health")
