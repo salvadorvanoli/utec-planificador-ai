@@ -1,5 +1,3 @@
-from .chatbot_controller import router as chatbot_router
-from .suggestion_controller import router as suggestion_router
-from .report_controller import router as report_router
+# API module - V2
+# Controllers moved to app/api/v2/
 
-__all__ = ["chatbot_router", "suggestion_router", "report_router"]

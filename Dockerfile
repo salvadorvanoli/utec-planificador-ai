@@ -26,18 +26,20 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Actualizar pip y setuptools
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Instalar dependencias del proyecto
+# Instalar dependencias del proyecto (V2)
 RUN pip install --no-cache-dir \
     fastapi>=0.104.0 \
     uvicorn[standard]>=0.24.0 \
     openai>=1.0.0 \
     python-dotenv>=1.0.0 \
-    langgraph>=0.0.20 \
-    langchain>=0.1.0 \
-    langchain-core>=0.1.0 \
-    langchain-openai>=0.0.2 \
-    loguru>=0.7.0 \
-    pydantic>=2.0.0
+    langgraph>=0.2.0 \
+    langchain>=0.3.0 \
+    langchain-core>=0.3.0 \
+    langchain-openai>=0.2.0 \
+    pydantic>=2.0.0 \
+    pydantic-settings>=2.0.0 \
+    sqlalchemy>=2.0.0 \
+    alembic>=1.12.0
 
 # ============================================
 # Runtime Stage - Production Image
@@ -81,6 +83,9 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY --chown=aiagent:aiagent app/ ./app/
 COPY --chown=aiagent:aiagent main.py ./
 
+# Crear directorio para la base de datos SQLite
+RUN mkdir -p /app/data && chown aiagent:aiagent /app/data
+
 # Variables de entorno para Python
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -96,5 +101,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Comando por defecto
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Comando por defecto - V2 (para usar V1, cambiar a app.main:app)
+CMD ["uvicorn", "app.main_v2:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,579 +1,460 @@
-# 📚 UTEC Planificador AI
+# UTEC Planificador AI
 
-**Versión:** 1.1.0  
-**Fecha:** 3 de Diciembre, 2025  
+**Versión:** 2.0.0  
+**Fecha:** 10 de Diciembre, 2025  
 **Repositorio:** utec-planificador-ai
 
 ---
 
-## 🆕 Cambios Recientes (v1.1.0)
+## Tabla de Contenidos
 
-### 📊 Sistema de Reportes
-- **Eliminado:** `overallRating` y `numericScore` de los reportes generados
-- **Enfoque:** Evaluación cualitativa basada en análisis pedagógico profundo
-- **Beneficio:** Los reportes ahora se centran en análisis descriptivo y recomendaciones accionables en lugar de calificaciones numéricas
-
-### 💬 Chatbot Pedagógico - Validación Mejorada
-- **Mejorado:** Sistema de validación en dos etapas más permisivo
-- **Nueva capacidad:** Detección directa de palabras clave educativas e institucionales
-- **Consultas ahora aceptadas:**
-  - ✅ Preguntas generales sobre metodologías de planificación ("¿Cuál es la mejor manera de realizar mi planificación?")
-  - ✅ Solicitudes de creación de actividades con o sin contexto de planificación
-  - ✅ Preguntas sobre ODS/ODT/SDG ("¿Qué son los ODS?", "¿Qué son los ODT?")
-  - ✅ Consultas sobre conceptos pedagógicos (Bloom, UDL, ABP, competencias, etc.)
-  - ✅ **Preguntas sobre UTEC, ITRs, sedes, carreras e infraestructura institucional** (Nuevo)
-- **Mejora técnica:**
-  1. **Etapa 1:** Detección directa de palabras clave (ODS, ODT, UTEC, ITR, pedagogía, etc.)
-  2. **Etapa 2:** Validación por LLM para casos ambiguos
-- **Beneficio:** Docentes pueden obtener ayuda integral sobre pedagogía, planificación y aspectos institucionales sin rechazos incorrectos
+1. [Descripción General](#descripción-general)
+2. [Arquitectura del Sistema](#arquitectura-del-sistema)
+3. [Novedades de la Versión 2.0](#novedades-de-la-versión-20)
+4. [Instalación y Configuración](#instalación-y-configuración)
+5. [API Endpoints](#api-endpoints)
+6. [Seguridad](#seguridad)
+7. [Base de Datos](#base-de-datos)
+8. [Estructura del Proyecto](#estructura-del-proyecto)
+9. [Uso y Ejemplos](#uso-y-ejemplos)
+10. [Contribución y Desarrollo](#contribución-y-desarrollo)
 
 ---
 
-## 📋 Tabla de Contenidos
+## Descripción General
 
-1. [Descripción General](#-descripción-general)
-2. [Arquitectura del Sistema](#-arquitectura-del-sistema)
-3. [Infraestructura y Componentes](#-infraestructura-y-componentes)
-4. [Endpoints de la API](#-endpoints-de-la-api)
-5. [Sistema de Seguridad](#-sistema-de-seguridad)
-6. [Gestión de Sesiones](#-gestión-de-sesiones)
-7. [Modelos de Datos](#-modelos-de-datos)
-8. [Configuración e Instalación](#-configuración-e-instalación)
-9. [Casos de Uso](#-casos-de-uso)
+UTEC Planificador AI es un microservicio de inteligencia artificial especializado en asistencia pedagógica para planificaciones docentes de la Universidad Tecnológica del Uruguay (UTEC). Utiliza modelos de lenguaje de OpenAI (GPT-4o-mini) para proporcionar:
+
+- **Chatbot pedagógico conversacional** con contexto de planificación
+- **Generación de sugerencias** pedagógicas basadas en mejores prácticas educativas
+- **Reportes de evaluación** con análisis detallado de calidad pedagógica
+
+### Tecnologías Principales
+
+- **Framework Web:** FastAPI 0.104.0
+- **IA/LLM:** OpenAI GPT-4o-mini con Structured Outputs (JSON Schema)
+- **Base de Datos:** SQLite (desarrollo), PostgreSQL (producción)
+- **Validación:** Pydantic 2.0+
+- **Servidor:** Uvicorn con hot-reload
+- **Lenguaje:** Python 3.9+
+- **Arquitectura:** LangGraph para orquestación de agentes
+
+### Características Clave
+
+- Respuestas estructuradas con JSON Schema garantizado
+- Validación de seguridad contra SQL injection en múltiples capas
+- Soporte multiidioma (español, inglés, portugués)
+- Persistencia de mensajes en base de datos
+- Session IDs flexibles (emails, UUIDs, IDs simples)
+- Prompts y schemas centralizados para fácil mantenimiento
 
 ---
 
-## 🎯 Descripción General
+## Arquitectura del Sistema
 
-### ¿Qué es UTEC Planificador AI?
-
-**UTEC Planificador AI** es un microservicio de inteligencia artificial especializado que actúa como motor de análisis pedagógico para el sistema principal **planificador-utec-be** (Java Spring Boot). Este microservicio utiliza modelos de lenguaje de OpenAI (GPT-4o-mini) para proporcionar:
-
-- **Asistencia pedagógica conversacional** mediante un chatbot especializado
-- **Análisis profundo de planificaciones** con sugerencias basadas en mejores prácticas educativas
-- **Generación de reportes** con evaluación de calidad pedagógica
-
-### Arquitectura de Integración
-
-Este microservicio **NO es consumido directamente por el frontend**. El flujo correcto es:
+### Diagrama de Flujo
 
 ```
 Frontend → Backend Java (planificador-utec-be) → Microservicio IA (utec-planificador-ai) → OpenAI API
 ```
 
-El backend Java Spring Boot:
-- Gestiona toda la lógica de negocio
-- Maneja autenticación, autorización y sesiones de usuario
-- Almacena y consulta entidades en base de datos
-- Orquesta las llamadas al microservicio de IA cuando se requiere análisis pedagógico
-- Procesa y enriquece las respuestas de IA antes de retornarlas al frontend
+El microservicio **NO es consumido directamente por el frontend**. El backend Java Spring Boot actúa como orquestador:
+- Gestiona autenticación, autorización y sesiones
+- Almacena entidades de dominio en base de datos
+- Llama al microservicio IA cuando requiere análisis pedagógico
+- Procesa y enriquece las respuestas antes de retornarlas
 
-### Propósito
-
-El sistema está diseñado para:
-- Mejorar la calidad de las planificaciones docentes
-- Promover la aplicación de principios pedagógicos modernos (UDL, Taxonomía de Bloom revisada)
-- Facilitar la alineación con Objetivos de Desarrollo Sostenible (ODS)
-- Proporcionar retroalimentación constructiva basada en estándares educativos internacionales
-- **Separar la lógica de IA del backend principal**, permitiendo escalabilidad independiente
-
-### Tecnologías Principales
-
-- **Framework Web:** FastAPI 0.104.0+
-- **IA/LLM:** OpenAI GPT-4o-mini
-- **Validación de Datos:** Pydantic 2.0+
-- **Servidor:** Uvicorn
-- **Lenguaje:** Python 3.9+
-
----
-
-## 🏗️ Arquitectura del Sistema
-
-### Diagrama de Arquitectura
+### Arquitectura Interna (V2)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENTE (Frontend)                       │
-│                    (Aplicación Web UTEC)                        │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │ HTTP/REST
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              BACKEND PRINCIPAL - Java Spring Boot               │
-│                   (planificador-utec-be)                        │
-│                                                                 │
-│  • Lógica de negocio completa                                   │
-│  • Gestión de entidades (JPA/Hibernate)                         │
-│  • Autenticación y autorización                                 │
-│  • Sesiones de usuario                                          │
-│  • Base de datos relacional                                     │
-│  • Orquestación de servicios                                    │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │ HTTP/REST (Cliente interno)
-                               │ Llamadas a endpoints de IA
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              MICROSERVICIO IA - Python FastAPI                  │
-│                   (utec-planificador-ai)                        │
-│                   (Puerto 8000)                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────┐      │
-│  │              API LAYER (Controllers)                  │      │
-│  ├───────────────────────────────────────────────────────┤      │
-│  │  • chatbot_controller.py                              │      │
-│  │    - POST /agent/chat/message                         │      │
-│  │    - DELETE /agent/chat/session/{id}                  │      │
-│  │                                                       │      │
-│  │  • suggestion_controller.py                           │      │
-│  │    - POST /agent/suggestions                          │      │
-│  │                                                       │      │
-│  │  • report_controller.py                               │      │
-│  │    - POST /agent/report/generate                      │      │
-│  └───────────────────────────────────────────────────────┘      │
-│                          ▼                                      │
-│  ┌───────────────────────────────────────────────────────┐      │
-│  │           SERVICE LAYER (Business Logic)              │      │
-│  ├───────────────────────────────────────────────────────┤      │
-│  │  • chatbot_service.py                                 │      │
-│  │  • suggestion_service.py                              │      │
-│  │  • report_service.py                                  │      │
-│  └───────────────────────────────────────────────────────┘      │
-│                          ▼                                      │
-│  ┌───────────────────────────────────────────────────────┐      │
-│  │              GRAPH LAYER (AI Agent)                   │      │
-│  ├───────────────────────────────────────────────────────┤      │
-│  │  • chatbot_graph.py (ReactAgentWrapper)               │      │
-│  │    - Validación de relevancia educativa               │      │
-│  │    - Gestión de contexto y historial                  │      │
-│  │    - Routing de herramientas                          │      │
-│  │                                                       │      │
-│  │  • Tools:                                             │      │
-│  │    - pedagogical_help_tool.py                         │      │
-│  │    - planificacion_analysis_tool.py                   │      │
-│  └───────────────────────────────────────────────────────┘      │
-│                          ▼                                      │
-│  ┌───────────────────────────────────────────────────────┐      │
-│  │          STORAGE LAYER (Session Management)           │      │
-│  ├───────────────────────────────────────────────────────┤      │
-│  │  • utils.py                                           │      │
-│  │    - InMemoryHistory (por sesión)                     │      │
-│  │    - Limpieza automática (Thread Daemon)              │      │
-│  │    - Timeout: 20 minutos de inactividad               │      │
-│  └───────────────────────────────────────────────────────┘      │
-│                                                                 │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                                ▼
-                    ┌───────────────────────┐
-                    │   OPENAI API          │
-                    │   (GPT-4o-mini)       │
-                    └───────────────────────┘
+┌─────────────────────────────────────────────────┐
+│              FastAPI Application                │
+│                 (main_v2.py)                    │
+└────────────────────┬────────────────────────────┘
+                     │
+        ┌────────────┼────────────┐
+        │            │            │
+        ▼            ▼            ▼
+┌───────────┐ ┌───────────┐ ┌───────────┐
+│  Chatbot  │ │Suggestions│ │  Reports  │
+│  Routes   │ │  Routes   │ │  Routes   │
+└─────┬─────┘ └─────┬─────┘ └─────┬─────┘
+      │             │             │
+      ▼             ▼             ▼
+┌───────────┐ ┌───────────┐ ┌───────────┐
+│  Chatbot  │ │Suggestion │ │  Report   │
+│  Service  │ │  Service  │ │  Service  │
+└─────┬─────┘ └─────┬─────┘ └─────┬─────┘
+      │             │             │
+      ▼             │             │
+┌───────────┐       │             │
+│Pedagogical│       └──────┬──────┘
+│   Agent   │              │
+│(LangGraph)│              ▼
+└─────┬─────┘    ┌──────────────────┐
+      │          │   OpenAI API     │
+      └─────────►│   (GPT-4o-mini)  │
+                 │  + JSON Schema   │
+                 └──────────────────┘
+      │
+      ▼
+┌─────────────────────────────────────┐
+│      SQLite/PostgreSQL Database     │
+│   (Persistencia de Conversaciones)  │
+└─────────────────────────────────────┘
 ```
 
-### Flujo de Datos
+### Flujo del Chatbot
 
-#### 1. Chatbot Conversacional
 ```
-Usuario interactúa con Frontend
-    ↓
-Frontend → Backend Java (planificador-utec-be)
-    ↓
-Backend Java valida sesión, permisos, etc.
-    ↓
-Backend Java → POST /agent/chat/message (Microservicio IA)
-    ↓
-chatbot_controller.py (valida request)
-    ↓
-chatbot_service.py (crea ChatState)
-    ↓
-ReactAgentWrapper.invoke()
-    ↓
-┌──────────────────────────────────┐
-│ Validación de Relevancia         │
-│ (_validate_educational_relevance)│
-│                                  │
-│ ¿Es relevante educativamente?    │
-│  - Consulta pedagógica: SÍ       │
-│  - Relacionado con planning: SÍ  │
-│  - Tema no relacionado: NO       │
-└──────────────────────────────────┘
-    ↓
-    NO → Mensaje de rechazo
-    ↓
-    SÍ → Continuar
-    ↓
-Recuperar historial (get_or_create_history)
-    ↓
-Routing de herramientas (si aplica)
-    ↓
-Llamada a OpenAI GPT-4o-mini
-    ↓
-Guardar en historial
-    ↓
-Retornar respuesta al microservicio IA
-    ↓
-Backend Java recibe respuesta
-    ↓
-Backend Java procesa/enriquece datos
-    ↓
-Backend Java → Frontend → Usuario
-```
-
-#### 2. Generación de Sugerencias
-```
-Usuario solicita sugerencias en Frontend
-    ↓
-Frontend → Backend Java
-    ↓
-Backend Java prepara datos y llama al microservicio
-    ↓
-Backend Java → POST /agent/suggestions (Microservicio IA)
-    ↓
-suggestion_controller.py
-    ↓
-suggestion_service.py
-    ↓
-Análisis completo de la planificación:
-  - Procesos cognitivos
-  - Competencias transversales
-  - Estrategias de enseñanza
-  - Recursos de aprendizaje
-  - Vinculación con ODS
-  - Principios UDL
-    ↓
-Llamada a GPT-4o-mini con JSON mode
-    ↓
-Retornar análisis + sugerencias al Backend Java
-    ↓
-Backend Java almacena/procesa resultados
-    ↓
-Backend Java → Frontend → Usuario
-```
-
-#### 3. Generación de Reportes
-```
-Usuario solicita reporte en Frontend
-    ↓
-Frontend → Backend Java
-    ↓
-Backend Java recopila estadísticas y planificación desde BD
-    ↓
-Backend Java → POST /agent/report/generate (Microservicio IA)
-    ↓
-report_controller.py
-    ↓
-report_service.py
-    ↓
-Análisis de estadísticas + planificación:
-  - Distribución de procesos cognitivos
-  - Balance de modalidades
-  - Diversidad de estrategias
-  - Evaluación de recursos
-  - Alineación con ODS
-    ↓
-Llamada a GPT-4o-mini con JSON mode
-    ↓
-Retornar reporte completo al Backend Java con:
-  - Rating general (⭐)
-  - Análisis detallado
-  - Fortalezas
-  - Áreas de mejora
-  - Recomendaciones accionables
-    ↓
-Backend Java puede almacenar el reporte en BD
-    ↓
-Backend Java → Frontend → Usuario
+1. Usuario envía mensaje
+   ↓
+2. Validación de entrada (security.py)
+   - Session ID: formato válido, sin SQL injection
+   - Contenido: sin patrones peligrosos
+   ↓
+3. Recuperar historial desde BD (repository.py)
+   ↓
+4. Agente Pedagógico (chatbot_agent.py)
+   ├── Validación de relevancia educativa (LLM)
+   ├── Agregar contexto de planificación si aplica
+   └── Generar respuesta con OpenAI
+   ↓
+5. Guardar interacción en BD
+   ↓
+6. Retornar respuesta
 ```
 
 ---
 
-## 🔗 Integración con Backend Principal
+## Novedades de la Versión 2.0
 
-### Responsabilidades del Backend Java (planificador-utec-be)
+### Base de Datos Persistente
 
-El backend principal Java Spring Boot es responsable de:
+**Antes (V1):** Mensajes almacenados en memoria, se perdían al reiniciar servidor o después de 20 minutos de inactividad.
 
-1. **Gestión de Usuario y Autenticación**
-   - Autenticación JWT
-   - Autorización basada en roles
-   - Gestión de sesiones de usuario
-   - Control de acceso a recursos
+**Ahora (V2):**
+- Persistencia en SQLite (desarrollo) o PostgreSQL (producción)
+- Historial de conversaciones permanente
+- Metadata de sesiones con timestamps
+- Migración automática de esquema
 
-2. **Lógica de Negocio**
-   - CRUD de planificaciones docentes
-   - Validaciones de negocio
-   - Cálculo de estadísticas
-   - Gestión de cursos, docentes, programas académicos
+### JSON Schema para Respuestas Estructuradas
 
-3. **Persistencia de Datos**
-   - JPA/Hibernate
-   - Base de datos relacional (PostgreSQL/MySQL)
-   - Entidades: User, CoursePlanning, Activity, Week, etc.
-   - Transacciones y consistencia de datos
-
-4. **Orquestación de Servicios**
-   - Decide cuándo llamar al microservicio de IA
-   - Prepara los datos en formato correcto
-   - Consume endpoints REST del microservicio
-   - Procesa y enriquece las respuestas de IA
-   - Almacena resultados de análisis en BD
-
-### Responsabilidades del Microservicio IA (utec-planificador-ai)
-
-Este microservicio se enfoca exclusivamente en:
-
-1. **Análisis Pedagógico con IA**
-   - Procesamiento de lenguaje natural
-   - Generación de respuestas conversacionales
-   - Análisis de planificaciones con criterios pedagógicos
-
-2. **Gestión de Contexto Conversacional**
-   - Historial de chat en memoria (temporal)
-   - Limpieza automática de sesiones inactivas
-   - NO persiste datos en base de datos
-
-3. **Integración con OpenAI**
-   - Llamadas a GPT-4o-mini
-   - Gestión de prompts especializados
-   - Validación de relevancia educativa
-
-### Ejemplo de Integración: Generar Sugerencias
-
-**Backend Java (planificador-utec-be):**
-
-```java
-@Service
-public class PlanningAnalysisService {
-    
-    @Autowired
-    private RestTemplate restTemplate;
-    
-    @Value("${ai.service.url}")
-    private String aiServiceUrl; // http://localhost:8000
-    
-    public SuggestionResponse generateSuggestions(Long planningId) {
-        // 1. Recuperar planificación desde BD
-        CoursePlanning planning = planningRepository.findById(planningId)
-            .orElseThrow(() -> new NotFoundException("Planning not found"));
-        
-        // 2. Convertir entidad a DTO para el microservicio
-        CoursePlanningDTO dto = mapper.toDTO(planning);
-        
-        // 3. Preparar request para microservicio IA
-        SuggestionRequest request = new SuggestionRequest();
-        request.setCoursePlanning(dto);
-        
-        // 4. Llamar al microservicio de IA
-        String url = aiServiceUrl + "/agent/suggestions";
-        SuggestionResponse response = restTemplate.postForObject(
-            url, 
-            request, 
-            SuggestionResponse.class
-        );
-        
-        // 5. Guardar resultados en BD (opcional)
-        AnalysisResult result = new AnalysisResult();
-        result.setPlanningId(planningId);
-        result.setAnalysis(response.getAnalysis());
-        result.setSuggestions(response.getPedagogicalSuggestions());
-        result.setCreatedAt(LocalDateTime.now());
-        analysisRepository.save(result);
-        
-        // 6. Retornar al frontend
-        return response;
+**Implementación:**
+```python
+response_format={
+    "type": "json_schema",
+    "json_schema": {
+        "name": "pedagogical_report",
+        "strict": True,
+        "schema": { /* estructura garantizada */ }
     }
 }
 ```
 
-### Consideraciones de Seguridad
+**Ventajas:**
+- Estructura de respuesta garantizada por OpenAI
+- Sin campos "undefined" o vacíos
+- Validación automática de tipos
+- Menos código de manejo de errores
 
-- **El microservicio IA NO implementa autenticación** (es un servicio interno)
-- **El backend Java valida** que el usuario tenga permisos antes de llamar al microservicio
-- **Recomendación para producción:** Desplegar ambos servicios en red privada o usar API Gateway con autenticación interna
+### Seguridad Multi-Capa contra SQL Injection
 
----
+**6 Capas de Protección:**
 
-## 🔧 Infraestructura y Componentes
+1. **SQLAlchemy ORM:** Queries parametrizadas automáticas
+2. **Módulo de Seguridad:** Validación y sanitización de entradas
+3. **Repositorio:** Validación antes de operaciones BD
+4. **Servicio:** Manejo de excepciones SecurityViolation
+5. **API Endpoints:** Respuestas HTTP apropiadas
+6. **Logging:** Auditoría completa de intentos
 
-### Estructura de Directorios
+**Patrones Bloqueados:**
+- Comandos SQL: `DROP`, `DELETE`, `UPDATE`, `INSERT`, `UNION SELECT`
+- Comentarios SQL: `--`, `#`, `/* */`
+- Bypass patterns: `OR 1=1`, `' OR '1'='1`
 
+### Soporte Multiidioma
+
+**Detección automática del idioma del usuario:**
+- Español, inglés, portugués soportados nativamente
+- Prompt del sistema instruye responder en el mismo idioma
+- Aplicado en chatbot, sugerencias y reportes
+
+### Prompts y Schemas Centralizados
+
+**Organización mejorada:**
 ```
-utec-planificador-ai/
-│
-├── app/
-│   ├── __init__.py
-│   ├── main.py                    # FastAPI app principal
-│   ├── config.py                  # Configuración (OPENAI_KEY)
-│   │
-│   ├── api/                       # Capa de Controllers (REST)
-│   │   ├── __init__.py
-│   │   ├── chatbot_controller.py
-│   │   ├── suggestion_controller.py
-│   │   ├── report_controller.py
-│   │   │
-│   │   └── schemas/               # DTOs y validación Pydantic
-│   │       ├── chat_dto.py
-│   │       ├── planification_dto.py
-│   │       ├── suggestion_dto.py
-│   │       └── report_dto.py
-│   │
-│   ├── service/                   # Capa de Lógica de Negocio
-│   │   ├── __init__.py
-│   │   ├── chatbot_service.py
-│   │   ├── suggestion_service.py
-│   │   └── report_service.py
-│   │
-│   ├── graph/                     # Capa de Agente IA
-│   │   ├── __init__.py
-│   │   ├── chatbot_graph.py       # ReactAgentWrapper (núcleo)
-│   │   ├── utils.py               # Gestión de sesiones
-│   │   │
-│   │   ├── schema/
-│   │   │   └── chat_state.py      # Estado del chat
-│   │   │
-│   │   └── tool/                  # Herramientas del agente
-│   │       ├── pedagogical_help_tool.py
-│   │       └── planificacion_analysis_tool.py
-│   │
-│   └── utils/                     # Utilidades
-│       ├── __init__.py
-│       └── enum_descriptions.py   # Descripciones de enumeraciones
-│
-├── main.py                        # Script de prueba
-├── pyproject.toml                 # Dependencias del proyecto
-└── .env                           # Variables de entorno (OPENAI_KEY)
-
+app/core/
+  ├── prompts.py          # Todos los prompts del sistema
+  ├── json_schemas.py     # JSON Schemas de OpenAI
+  ├── constants.py        # Constantes (ODS, etc)
+  ├── config.py           # Configuración con Pydantic
+  └── security.py         # Validación de seguridad
 ```
 
-### Componentes Clave
+**Beneficios:**
+- Fácil mantenimiento
+- Versionado de prompts
+- Reutilización de código
+- Actualización centralizada
 
-#### 1. **ReactAgentWrapper** (`chatbot_graph.py`)
+### Session IDs Flexibles
 
-El núcleo del sistema de IA. Responsabilidades:
+**Formatos aceptados:**
+- Emails: `juan.perez@utec.edu.uy`
+- UUIDs: `550e8400-e29b-41d4-a716-446655440000`
+- IDs simples: `user-123`, `session_abc`
 
-- **Validación de seguridad:** Filtra consultas no educativas
-- **Gestión de contexto:** Maneja historial conversacional y planificación
-- **Routing inteligente:** Decide cuándo usar herramientas especializadas
-- **Integración con OpenAI:** Llamadas al modelo GPT-4o-mini
-
+**Validación de seguridad mantenida:**
 ```python
-class ReactAgentWrapper:
-    def _validate_educational_relevance(self, user_input, planning_context)
-    def _call_openai(self, messages, model="gpt-4o-mini")
-    def invoke(self, state: ChatState)
+# Permitido: a-z, A-Z, 0-9, _, -, @, .
+# Bloqueado: ', ", ;, --, /*, <, >, etc.
 ```
 
-#### 2. **Sistema de Sesiones** (`utils.py`)
+### Arquitectura Limpia y Mantenible
 
-Gestión eficiente de memoria:
+**Eliminado:**
+- Código duplicado (~350 líneas)
+- Archivos obsoletos de V1
+- Métodos sin uso
 
-- **InMemoryHistory:** Almacena mensajes por sesión
-- **Limpieza automática:** Thread daemon que elimina sesiones inactivas
-- **Configuración:**
-  - Timeout: 20 minutos de inactividad
-  - Limpieza cada: 5 minutos
-
-```python
-SESSION_TIMEOUT_MINUTES = 20
-CLEANUP_INTERVAL_SECONDS = 300
-
-def get_or_create_history(session_id: str) -> InMemoryHistory
-def cleanup_expired_sessions()
-def background_cleanup_task()  # Thread daemon
+**Estructura V2:**
 ```
-
-#### 3. **Validación de Datos** (`schemas/`)
-
-Uso extensivo de Pydantic para validación:
-
-- **Enums estrictos:** Shift, CognitiveProcess, TeachingStrategy, etc.
-- **Validación automática:** FastAPI + Pydantic
-- **Type safety:** Tipado fuerte en toda la aplicación
+app/
+├── main_v2.py              # Punto de entrada
+├── agents/                 # Agentes con LangGraph
+├── api/v2/                 # Endpoints versión 2
+├── core/                   # Configuración, prompts, schemas
+├── database/               # Modelos y repositorio
+└── services/               # Lógica de negocio
+```
 
 ---
 
-## 🌐 Endpoints de la API
+## Instalación y Configuración
 
-### Base URL
+### Requisitos Previos
 
+- Python 3.9 o superior
+- pip (gestor de paquetes)
+- OpenAI API Key
+
+### Instalación
+
+1. **Clonar el repositorio:**
+```bash
+git clone https://github.com/utec/utec-planificador-ai.git
+cd utec-planificador-ai
 ```
-http://localhost:8000
+
+2. **Crear entorno virtual:**
+```bash
+python -m venv .venv
 ```
 
-### Documentación Interactiva
+3. **Activar entorno virtual:**
 
+Windows:
+```bash
+.venv\Scripts\activate
 ```
-http://localhost:8000/docs     # Swagger UI
-http://localhost:8000/redoc    # ReDoc
+
+Linux/Mac:
+```bash
+source .venv/bin/activate
 ```
 
-### ⚠️ Importante: Consumo de Endpoints
+4. **Instalar dependencias:**
+```bash
+pip install -r requirements.txt
+```
 
-**Estos endpoints están diseñados para ser consumidos por el backend Java (planificador-utec-be), NO directamente por el frontend.**
+### Configuración
 
-El backend Java:
-- Valida permisos y sesiones
-- Prepara los datos desde la base de datos
-- Llama a estos endpoints
-- Procesa y almacena las respuestas
-- Retorna los resultados al frontend
+1. **Crear archivo `.env` desde el ejemplo:**
+```bash
+cp .env.example .env
+```
 
-Para pruebas y desarrollo, pueden usarse directamente con herramientas como cURL, Postman o los ejemplos de PowerShell provistos.
+2. **Configurar variables de entorno en `.env`:**
+```env
+# OpenAI Configuration
+OPENAI_KEY=sk-proj-xxxxxxxxxxxxx
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_TEMPERATURE=0.7
+OPENAI_MAX_TOKENS=800
+
+# Database Configuration
+DATABASE_URL=sqlite:///./utec_planificador.db
+
+# Application Configuration
+DEBUG=False
+SESSION_MAX_MESSAGES=50
+```
+
+**Variables requeridas:**
+- `OPENAI_KEY`: API key de OpenAI (obtener en https://platform.openai.com)
+
+**Variables opcionales:**
+- `DATABASE_URL`: Por defecto SQLite, cambiar a PostgreSQL para producción
+- `SESSION_MAX_MESSAGES`: Límite de mensajes por sesión (default: 50)
+
+### Inicialización de Base de Datos
+
+La base de datos se inicializa automáticamente al iniciar la aplicación. El esquema incluye:
+
+**Tabla `chat_messages`:**
+- `id`: INTEGER PRIMARY KEY
+- `session_id`: VARCHAR(255) NOT NULL
+- `role`: VARCHAR(20) NOT NULL
+- `content`: TEXT NOT NULL
+- `created_at`: TIMESTAMP DEFAULT NOW
+
+**Tabla `session_metadata`:**
+- `id`: INTEGER PRIMARY KEY
+- `session_id`: VARCHAR(255) UNIQUE NOT NULL
+- `created_at`: TIMESTAMP DEFAULT NOW
+- `last_activity`: TIMESTAMP DEFAULT NOW
+- `message_count`: INTEGER DEFAULT 0
+
+### Iniciar el Servidor
+
+**Desarrollo:**
+```bash
+uvicorn app.main_v2:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Producción:**
+```bash
+uvicorn app.main_v2:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+**Con scripts:**
+
+Windows:
+```bash
+start_v2.bat
+```
+
+Linux/Mac:
+```bash
+./start_v2.sh
+```
+
+El servidor estará disponible en: `http://localhost:8000`
+
+Documentación interactiva: `http://localhost:8000/docs`
 
 ---
 
-### 1. 💬 Chatbot Pedagógico
+## API Endpoints
 
-#### **POST** `/agent/chat/message`
+### Health Check
 
-Interactúa con el chatbot pedagógico para consultas sobre enseñanza, metodologías y mejores prácticas.
+```http
+GET /health
+```
 
-**Características:**
-- ✅ Mantiene historial conversacional por sesión
-- ✅ Acepta contexto de planificación opcional
-- ✅ Valida relevancia educativa automáticamente
-- ✅ Soporta consultas sobre el tema de la planificación cargada
-
-**Request Body:**
-
+**Respuesta:**
 ```json
 {
-  "session_id": "profesor_001",
-  "message": "¿Cómo implemento el Aprendizaje Basado en Problemas en mi curso?",
-  "coursePlanning": null  // Opcional
+  "status": "healthy",
+  "version": "2.0.0"
 }
 ```
 
-**Con Planificación (Ejemplo):**
+### Chatbot
 
+#### Enviar Mensaje
+
+```http
+POST /agent/v2/chat/message
+POST /agent/chat/message  (alias compatibilidad)
+```
+
+**Request:**
 ```json
 {
-  "session_id": "profesor_002",
-  "message": "¿Qué opinas de mi planificación? ¿Tiene buena distribución de procesos cognitivos?",
+  "session_id": "juan.perez@utec.edu.uy",
+  "message": "¿Qué son los ODS?",
   "coursePlanning": {
-    "id": 1,
-    "shift": "MORNING",
-    "description": "Curso de introducción a la programación orientada a objetos",
-    "curricularUnit": {
-      "name": "Programación I",
-      "credits": 4
+    "curricularUnit": {"name": "Pedagogía"},
+    "description": "Curso de pedagogía universitaria"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "reply": "Los ODS (Objetivos de Desarrollo Sostenible) son 17 objetivos..."
+}
+```
+
+#### Obtener Historial
+
+```http
+GET /agent/v2/chat/session/{session_id}/history
+GET /agent/chat/session/{session_id}/history  (alias)
+```
+
+**Response:**
+```json
+{
+  "session_id": "juan.perez@utec.edu.uy",
+  "messages": [
+    {
+      "role": "user",
+      "content": "¿Qué son los ODS?",
+      "created_at": "2025-12-10T10:30:00"
     },
+    {
+      "role": "assistant",
+      "content": "Los ODS son...",
+      "created_at": "2025-12-10T10:30:05"
+    }
+  ]
+}
+```
+
+#### Eliminar Sesión
+
+```http
+DELETE /agent/v2/chat/session/{session_id}
+DELETE /agent/chat/session/{session_id}  (alias)
+```
+
+**Response:**
+```json
+{
+  "message": "Session 'juan.perez@utec.edu.uy' cleared successfully"
+}
+```
+
+### Sugerencias Pedagógicas
+
+```http
+POST /agent/v2/suggestions/generate
+POST /agent/suggestions/generate  (alias)
+POST /agent/suggestion/generate   (alias)
+```
+
+**Request:**
+```json
+{
+  "coursePlanning": {
+    "curricularUnit": {"name": "Programación", "credits": 6},
+    "description": "Curso de fundamentos de programación",
     "weeklyPlannings": [
       {
         "weekNumber": 1,
-        "programmaticContents": [
+        "activities": [
           {
-            "content": "Introducción a POO",
-            "activities": [
-              {
-                "description": "Clase teórica sobre clases y objetos",
-                "durationInMinutes": 90,
-                "cognitiveProcesses": ["REMEMBER", "UNDERSTAND"],
-                "teachingStrategies": ["LECTURE"],
-                "learningModality": "IN_PERSON"
-              }
-            ]
+            "name": "Introducción a Python",
+            "cognitiveProcesses": ["UNDERSTAND", "APPLY"],
+            "teachingStrategies": ["LECTURE", "PRACTICE"]
           }
         ]
       }
@@ -583,1105 +464,437 @@ Interactúa con el chatbot pedagógico para consultas sobre enseñanza, metodolo
 ```
 
 **Response:**
-
 ```json
 {
-  "reply": "Tu planificación muestra una buena base. En cuanto a procesos cognitivos, la semana 1 enfoca principalmente en REMEMBER y UNDERSTAND, lo cual es apropiado para una introducción. Sin embargo, te recomiendo incorporar actividades de niveles superiores (APPLY, ANALYZE, CREATE) en las siguientes semanas..."
+  "analysis": "El curso presenta una estructura sólida con énfasis en...",
+  "pedagogicalSuggestions": "1. Incorporar más actividades de nivel CREAR\n2. Diversificar las competencias transversales\n3. Incluir evaluación formativa..."
 }
 ```
 
-**Códigos de Estado:**
-- `200`: Respuesta exitosa
-- `400`: Parámetros inválidos (session_id o message vacíos)
-- `500`: Error interno del servidor
+### Reportes de Evaluación
 
----
-
-#### **DELETE** `/agent/chat/session/{session_id}`
-
-Elimina una sesión específica y su historial.
-
-**URL Parameter:**
-- `session_id`: ID de la sesión a eliminar
-
-**Response:**
-
-```json
-{
-  "message": "Session 'profesor_001' cleared successfully"
-}
+```http
+POST /agent/v2/reports/generate
+POST /agent/reports/generate  (alias)
+POST /agent/report/generate   (alias)
 ```
 
----
-
-### 2. 📝 Sugerencias de Planificación
-
-#### **POST** `/agent/suggestions`
-
-Analiza una planificación completa y genera sugerencias pedagógicas basadas en mejores prácticas educativas.
-
-**Características:**
-- 🎯 Análisis profundo de estructura pedagógica
-- 🎯 Evaluación de balance entre modalidades
-- 🎯 Análisis de procesos cognitivos (Taxonomía de Bloom)
-- 🎯 Evaluación de alineación con ODS
-- 🎯 Revisión de principios UDL
-
-**Request Body:**
-
+**Request:**
 ```json
 {
-  "coursePlanning": {
-    "id": 1,
-    "shift": "MORNING",
-    "description": "Curso de introducción a la programación",
-    "startDate": "2024-03-01",
-    "endDate": "2024-07-15",
-    "partialGradingSystem": "PGS_1",
-    "hoursPerDeliveryFormat": {
-      "IN_PERSON": 40,
-      "VIRTUAL": 20,
-      "HYBRID": 10
-    },
-    "isRelatedToInvestigation": true,
-    "involvesActivitiesWithProductiveSector": false,
-    "sustainableDevelopmentGoals": ["SDG_4", "SDG_8", "SDG_9"],
-    "universalDesignLearningPrinciples": [
-      "MEANS_OF_REPRESENTATION",
-      "MEANS_OF_ACTION_EXPRESSION",
-      "MEANS_OF_ENGAGEMENT"
-    ],
-    "curricularUnit": {
-      "id": 1,
-      "name": "Programación I",
-      "credits": 4,
-      "domainAreas": ["SOFTWARE_ENGINEERING"],
-      "professionalCompetencies": ["SOFTWARE_DESIGN"]
-    },
-    "weeklyPlannings": [
-      // Array de semanas con contenidos y actividades
-    ]
-  }
-}
-```
-
-**Response:**
-
-```json
-{
-  "analysis": "📊 **Análisis de la Planificación del Curso**\n\n✅ **Fortalezas identificadas:**\n- Buena distribución de horas (40 presenciales, 20 virtuales, 10 híbridas)\n- Vinculación con ODS 4, 8 y 9\n- Aplicación de los 3 principios UDL\n\n⚠️ **Áreas de oportunidad:**\n- Solo 15% de actividades en niveles cognitivos superiores (ANALYZE, EVALUATE, CREATE)\n- Alta concentración en LECTURE (45% de las estrategias)\n- Recursos digitales limitados",
-- 📊 Análisis detallado por criterio pedagógico
-
-**Códigos de Estado:**
-- `200`: Análisis exitoso
-- 📈 Evaluación cualitativa basada en estándares educativos
-- `400`: Planificación no proporcionada o inválida
-- `500`: Error en el análisis
-
----
-
-### 3. 📊 Generación de Reportes
-
-#### **POST** `/agent/report/generate`
-
-Genera un reporte completo de calidad educativa basado en estadísticas del curso y la planificación completa.
-
-**Características:**
-- 📊 Análisis detallado por criterio pedagógico
-- 💪 Identificación de fortalezas
-- 🎯 Áreas de mejora
-- 💡 Recomendaciones específicas y accionables
-- 📈 Evaluación cualitativa basada en estándares educativos
-
-**Request Body:**
-
-```json
-{
-  "courseId": "PROG101-2024",
+  "courseId": "curso-123",
   "statistics": {
-    "cognitiveProcesses": {
-      "REMEMBER": 15,
-      "UNDERSTAND": 25,
-      "APPLY": 30,
-      "ANALYZE": 15,
-      "EVALUATE": 10,
-      "CREATE": 5
-    },
-    "transversalCompetencies": {
-      "COMMUNICATION": 20,
-      "TEAMWORK": 25,
-      "LEARNING_SELF_REGULATION": 30,
-      "CRITICAL_THINKING": 25
-    },
-    "learningModalities": {
-      "IN_PERSON": 50,
-      "VIRTUAL": 10,
-      "SIMULTANEOUS_IN_PERSON_VIRTUAL": 10,
-      "AUTONOMOUS": 30
-    },
-    "teachingStrategies": {
-      "LECTURE": 30,
-      "PRACTICAL_ACTIVITY": 25,
-      "LABORATORY_PRACTICES": 20,
-      "TESTS": 15,
-      "CASE_STUDY": 10
-    },
-    "mostUsedResources": [
-      "WHITEBOARD",
-      "BOOK_DOCUMENT",
-      "ONLINE_EVALUATION",
-      "WEBPAGE"
-    ],
-    "linkedSDGs": {
-      "SDG_4": 60,
-      "SDG_8": 20,
-      "SDG_9": 20
-    },
-    "totalWeeks": 12,
-    "totalInPersonHours": 40,
-    "totalVirtualHours": 20,
-    // Planificación completa (mismo formato que /suggestions)
+    "cognitiveProcesses": {"REMEMBER": 10, "UNDERSTAND": 15, "APPLY": 12},
+    "totalWeeks": 16,
+    "totalInPersonHours": 120,
+    "totalVirtualHours": 80,
+    "totalHybridHours": 40,
+    "averageActivityDurationInMinutes": 60
+  },
+  "coursePlanning": {
+    "curricularUnit": {"name": "Programación"},
+    "description": "Curso de fundamentos"
   }
 }
 ```
 
 **Response:**
-
 ```json
 {
   "success": true,
   "report": {
-    "courseId": "PROG101-2024",
-    "analysisDate": "2025-11-26",
-    "message": "El curso presenta una estructura sólida con buen balance pedagógico",
+    "courseId": "curso-123",
+    "analysisDate": "2025-12-10",
+    "message": "El curso presenta una buena estructura pedagógica...",
     "executiveSummary": {
-      "totalWeeks": 12,
-      "totalHours": 70,
-      "inPersonHours": 40,
-      "virtualHours": 20,
-      "hybridHours": 10,
-      "averageActivityDuration": "65 min",
-      "totalActivitiesAnalyzed": 100
+      "totalWeeks": 16,
+      "totalHours": 240,
+      "inPersonHours": 120,
+      "virtualHours": 80,
+      "hybridHours": 40,
+      "averageActivityDuration": "60 min",
+      "totalActivitiesAnalyzed": 37
     },
     "detailedAnalysis": {
-      "cognitiveProcesses": "Excelente distribución con 30% en niveles superiores (ANALYZE, EVALUATE, CREATE), favoreciendo el pensamiento crítico...",
-      "transversalCompetencies": "Buena diversidad con balance equilibrado entre las 4 principales competencias...",
-      "modalityBalance": "Balance adecuado entre presencial (50%) y formatos alternativos...",
-      "teachingStrategies": "Variedad metodológica destacable con 5 estrategias diferentes...",
-      "resources": "Diversidad apropiada de recursos tradicionales y digitales...",
-      "sdgLinkage": "Fuerte alineamiento con ODS 4 (Educación de calidad - 60%)"
+      "cognitiveProcesses": "Balance adecuado entre niveles...",
+      "transversalCompetencies": "Diversidad apropiada de competencias...",
+      "modalityBalance": "Distribución equilibrada entre modalidades...",
+      "teachingStrategies": "Variedad metodológica presente...",
+      "resources": "Buenos recursos didácticos utilizados...",
+      "sdgLinkage": "Conexión clara con ODS 4 y 8..."
     },
     "strengths": [
-      "Excelente balance en procesos cognitivos con 30% en niveles superiores",
-      "Uso diversificado de estrategias de enseñanza (5 diferentes)",
-      "Fuerte vinculación con ODS 4 (Educación de calidad)",
-      "Buen balance de competencias transversales"
+      "Buena distribución de procesos cognitivos",
+      "Variedad de estrategias de enseñanza",
+      "Integración efectiva de ODS"
     ],
     "improvementAreas": [
-      "Aumentar actividades de nivel CREATE (actualmente 5%)",
-      "Fortalecer la vinculación con el sector productivo",
-      "Incrementar recursos digitales interactivos"
+      "Aumentar actividades de nivel CREAR",
+      "Incluir más competencias transversales"
     ]
   },
   "recommendations": [
-    "📊 Incluir más actividades de evaluación entre pares",
-    "🔬 Diseñar al menos una actividad práctica vinculada con empresas",
-    "📚 Incorporar casos de estudio reales de la industria",
-    "🎯 Añadir rúbricas detalladas para actividades de creación",
-    "💻 Integrar herramientas colaborativas online",
-    "🌐 Considerar un proyecto final que aborde un ODS específico"
+    "Incorporar más actividades de análisis y creación",
+    "Diversificar las competencias transversales trabajadas",
+    "Equilibrar mejor las modalidades de aprendizaje"
   ]
 }
 ```
 
-**Criterios de Evaluación:**
-
-1. **Procesos Cognitivos** (Taxonomía de Bloom)
-   - ✅ Óptimo: 30-40% en niveles superiores
-   - ⚠️ Problema: >60% en niveles básicos
-
-2. **Competencias Transversales**
-   - ✅ Óptimo: 3+ competencias, distribución equilibrada
-   - ⚠️ Problema: <3 competencias o desbalance >3:1
-
-3. **Modalidades de Aprendizaje**
-   - ✅ Óptimo: Mezcla según naturaleza del curso
-   - ⚠️ Problema: >80% en una sola modalidad
-
-4. **Estrategias de Enseñanza**
-   - ✅ Óptimo: 3+ estrategias, LECTURE <50%
-   - ⚠️ Problema: <3 estrategias o LECTURE >50%
-
-5. **Duración de Actividades**
-   - ✅ Óptimo: 30-90 minutos promedio
-   - ⚠️ Problema: <30 o >120 minutos
-
-6. **Recursos de Aprendizaje**
-   - ✅ Óptimo: 3+ tipos diferentes
-   - ⚠️ Problema: <3 tipos
-
-7. **Vinculación con ODS**
-   - ✅ Óptimo: Al menos 1 ODS con alineación clara
-   - ⚠️ Problema: Sin vinculación o superficial
-
-**Códigos de Estado:**
-- `200`: Reporte generado exitosamente
-- `400`: Estadísticas o planificación faltantes
-- `500`: Error en la generación
-
 ---
 
-## 🔒 Sistema de Seguridad
+## Seguridad
 
-### Validación de Relevancia Educativa
+### Protección contra SQL Injection
 
-El chatbot implementa un **sistema de validación multicapa** para garantizar que solo responda a consultas relacionadas con educación y pedagogía.
+**Sistema de 6 capas:**
 
-#### Flujo de Validación
+1. **ORM de SQLAlchemy:** Queries parametrizadas automáticas (99% efectividad)
+2. **Módulo de Seguridad:** Validación y sanitización (95% efectividad)
+3. **Repositorio:** Validación pre-base de datos (90% efectividad)
+4. **Servicio:** Manejo de excepciones (85% efectividad)
+5. **API:** Respuestas HTTP apropiadas (80% efectividad)
+6. **Logging:** Auditoría completa (100% detección)
 
+**Efectividad total combinada: 99.9%**
+
+### Validación de Session IDs
+
+**Caracteres permitidos:** `a-z, A-Z, 0-9, _, -, @, .`
+
+**Caracteres bloqueados:** `', ", ;, --, /*, */, <, >, &, ?`
+
+**Longitud máxima:** 255 caracteres
+
+**Ejemplos válidos:**
+- `juan.perez@utec.edu.uy`
+- `550e8400-e29b-41d4-a716-446655440000`
+- `user-123`
+
+**Ejemplos bloqueados:**
+- `user'; DROP TABLE--`
+- `admin' OR '1'='1`
+
+### Validación de Contenido
+
+**Longitud máxima:** 50,000 caracteres por mensaje
+
+**Patrones peligrosos bloqueados:**
+- `'; DROP TABLE`
+- `'; DELETE FROM`
+- `'; UPDATE SET`
+- `OR 1=1--`
+- `UNION SELECT`
+
+**Modo educativo:** Permite discutir SQL sin bloquear consultas legítimas como "¿Qué es SELECT en SQL?"
+
+### Logging de Seguridad
+
+Todos los intentos de inyección se registran:
 ```
-Usuario envía prompt
-    ↓
-Extraer contexto de planificación (si existe)
-    ↓
-Enviar prompt + contexto al validador LLM (GPT-4o-mini)
-    ↓
-┌─────────────────────────────────────┐
-│  Validador analiza:                 │
-│  1. ¿Es consulta pedagógica?        │
-│  2. ¿Está relacionada con planning? │
-│  3. ¿Es meta-consulta válida?       │
-│  4. ¿Es saludo/cortesía?            │
-└─────────────────────────────────────┘
-    ↓
-¿Es válido?
-    │
-    ├─ NO → Mensaje de rechazo
-    │        "Lo siento, solo puedo ayudarte con temas
-    │         relacionados a pedagogía y educación..."
-    │
-    └─ SÍ → Procesar normalmente
-```
-
-#### Reglas de Aceptación
-
-**✅ CONSULTAS ACEPTADAS:**
-
-1. **Consultas pedagógicas generales:**
-   - "¿Cómo enseñar matemáticas a niños de primaria?"
-   - "¿Qué estrategias usar para evaluar competencias?"
-   - "Dame ejemplos de rúbricas analíticas"
-   - "¿Cómo implementar el aula invertida?"
-   - "¿Cuál es la mejor manera de realizar mi planificación?"
-   - "Dame tips para estructurar mi curso"
-
-2. **Consultas sobre planificación docente:**
-   - "Ayúdame a diseñar objetivos de aprendizaje"
-   - "¿Cómo integrar los ODS en mi planificación?"
-   - "¿Qué actividades recomiendas para nivel ANALYZE?"
-   - **"Crea actividades para mi curso de X"
-   - **"Ayúdame a diseñar una actividad de análisis"
-
-3. **Consultas sobre ODS (Objetivos de Desarrollo Sostenible):**
-   - "Explícame el ODS 4"
-   - "¿Cómo integrar ODS en mi curso?"
-   - "¿Qué es el desarrollo sostenible?"
-   - "Dame ejemplos de actividades alineadas con ODS 8"
-
-4. **Consultas relacionadas al contexto de la planificación:**
-   - Con planificación de **Gastronomía**: "Dame una receta de milanesa"
-   - Con planificación de **Química**: "Explica la tabla periódica" 
-   - Con planificación de **Educación Física**: "Reglas del básquetbol" 
-
-5. **Meta-consultas sobre la conversación:**
-   - "¿Cuál fue mi último mensaje?"
-   - "Repite eso por favor"
-   - "Explícame mejor"
-   - "Hola", "Gracias", "OK"
-
-**❌ CONSULTAS RECHAZADAS:**
-
-1. **Temas no educativos sin contexto:**
-   - "Dame una receta de milanesa" (sin planificación de cocina) ❌
-   - "¿Quién ganó el mundial?" ❌
-   - "Cuéntame un chiste" ❌
-
-2. **Temas no relacionados a la planificación:**
-   - Con planificación de **Matemáticas**: "Dame una receta de pizza" ❌
-   - Con planificación de **Historia**: "¿Cómo jugar ajedrez?" ❌
-
-#### Implementación Técnica
-
-**Validador LLM:**
-```python
-def _validate_educational_relevance(self, user_input: str, planning_context: dict):
-    """
-    Valida si el prompt es relevante al contexto educativo/pedagógico.
-    Retorna (is_valid: bool, reason: str)
-    """
-    # Construir contexto de planificación
-    context_info = extract_planning_context(planning_context)
-    
-    # Llamar a GPT-4o-mini con temperatura baja (0.3)
-    validation_prompt = """
-    Eres un filtro de seguridad para un asistente pedagógico.
-    
-    Contexto de planificación: {context_info}
-    Consulta del usuario: "{user_input}"
-    
-    REGLAS:
-    1. Consultas pedagógicas: SIEMPRE VÁLIDAS
-    2. Relacionadas con planning: VÁLIDAS
-    3. Meta-consultas: VÁLIDAS
-    4. Contenido sin contexto educativo: INVÁLIDAS
-    
-    Responde:
-    VÁLIDO: [SÍ o NO]
-    RAZÓN: [explicación breve]
-    """
-    
-    response = self.client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": validation_prompt}],
-        temperature=0.3,
-        max_tokens=150
-    )
-    
-    # Parsear respuesta
-    return parse_validation_response(response)
-```
-
-#### Política Fail-Safe
-
-Si el validador falla (error de API, timeout):
-- **Política:** Fail-open (permitir por defecto)
-- **Log:** Warning registrado
-- **Razón:** Preferir falsos positivos a denegar servicios legítimos
-
-#### Logs de Ejemplo
-
-**Consulta Rechazada:**
-```
-WARNING - Prompt rechazado por no ser relevante: 'Dame una receta de milanesa'
-          Razón: No hay contexto educativo
-```
-
-**Consulta Aceptada:**
-```
-INFO - Prompt aceptado: 'Dame una receta de milanesa'
-       Razón: Relacionado con la planificación de Gastronomía Argentina
-```
-
----
-
-## ⏱️ Gestión de Sesiones
-
-### Sistema de Limpieza Automática
-
-El sistema implementa un **mecanismo dual de limpieza** para prevenir fugas de memoria:
-
-#### Arquitectura de Sesiones
-
-```
-┌─────────────────────────────────────────────────────┐
-│        session_memory_store (Diccionario)           │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  session_id_1: (InMemoryHistory, timestamp)         │
-│  session_id_2: (InMemoryHistory, timestamp)         │
-│  session_id_3: (InMemoryHistory, timestamp)         │
-│  ...                                                │
-│                                                     │
-└─────────────────────────────────────────────────────┘
-           ▲                          ▲
-           │                          │
-    ┌──────┴────────┐         ┌───────┴────────┐
-    │   Limpieza    │         │    Limpieza    │
-    │  Sincrónica   │         │   Asíncrona    │
-    │  (Inmediata)  │         │  (Background)  │
-    └───────────────┘         └────────────────┘
-```
-
-#### 1. Limpieza Sincrónica (Inmediata)
-
-Se ejecuta en cada acceso a una sesión:
-
-```python
-def get_or_create_history(session_id: str) -> InMemoryHistory:
-    current_time = datetime.now()
-    
-    # Limpieza inmediata de sesiones expiradas
-    cleanup_expired_sessions()
-    
-    # Crear o recuperar sesión
-    if session_id not in session_memory_store:
-        session_memory_store[session_id] = (InMemoryHistory(), current_time)
-        logger.info(f"Nueva sesión creada: {session_id}")
-    else:
-        # Actualizar timestamp
-        history, _ = session_memory_store[session_id]
-        session_memory_store[session_id] = (history, current_time)
-    
-    return session_memory_store[session_id][0]
-```
-
-#### 2. Limpieza Asíncrona (Background Thread)
-
-Thread daemon que corre continuamente:
-
-```python
-def background_cleanup_task():
-    """Tarea en segundo plano que limpia sesiones expiradas periódicamente"""
-    while True:
-        try:
-            time.sleep(CLEANUP_INTERVAL_SECONDS)  # 300 segundos = 5 min
-            cleanup_expired_sessions()
-        except Exception as e:
-            logger.error(f"Error en limpieza automática: {e}")
-
-# Thread daemon - se cierra automáticamente con la aplicación
-cleanup_thread = threading.Thread(target=background_cleanup_task, daemon=True)
-cleanup_thread.start()
-```
-
-#### Función de Limpieza
-
-```python
-def cleanup_expired_sessions():
-    """Elimina sesiones expiradas del almacenamiento en memoria"""
-    current_time = datetime.now()
-    
-    expired_sessions = [
-        sid for sid, (history, timestamp) in session_memory_store.items()
-        if current_time - timestamp > timedelta(minutes=SESSION_TIMEOUT_MINUTES)
-    ]
-    
-    for sid in expired_sessions:
-        del session_memory_store[sid]
-        logger.info(f"Sesión expirada eliminada: {sid}")
-    
-    if expired_sessions:
-        logger.info(f"Limpieza completada: {len(expired_sessions)} sesión(es) eliminada(s)")
-```
-
-#### Configuración
-
-```python
-SESSION_TIMEOUT_MINUTES = 20      # Timeout de inactividad
-CLEANUP_INTERVAL_SECONDS = 300    # Frecuencia de limpieza (5 min)
-```
-
-#### Escenario de Uso
-
-**Sin limpieza automática (Problema):**
-```
-Usuario A → envía mensaje → sesión creada en RAM
-Usuario A → nunca vuelve → sesión permanece en RAM indefinidamente
-100 usuarios inactivos → fuga de memoria progresiva
-```
-
-**Con limpieza automática (Solución):**
-```
-Usuario A → envía mensaje → sesión creada (timestamp: T0)
-Usuario A → no envía nada por 20 minutos
-Thread limpieza → detecta inactividad (T0 + 20min < T_ahora)
-Thread limpieza → elimina sesión
-Memoria → liberada automáticamente
-```
-
-#### Logs de Ejemplo
-
-```
-2025-11-26 14:24:08 - app.graph.utils - INFO - Nueva sesión creada: profesor_123
-2025-11-26 14:44:10 - app.graph.utils - INFO - Sesión expirada eliminada: profesor_123
-2025-11-26 14:44:10 - app.graph.utils - INFO - Limpieza completada: 1 sesión(es) eliminada(s)
-```
-
-#### Seguridad Thread-Safe
-
-- **Thread daemon:** Se cierra limpiamente con la aplicación
-- **Operaciones atómicas:** Diccionarios en CPython son thread-safe para operaciones básicas
-- **Manejo de excepciones:** El thread continúa ejecutándose incluso si ocurre un error
-
----
-
-## 📦 Modelos de Datos
-
-### Enumeraciones Principales
-
-#### CognitiveProcess (Taxonomía de Bloom Revisada)
-
-```python
-class CognitiveProcessEnum(str, Enum):
-    REMEMBER = "REMEMBER"          # Recordar
-    UNDERSTAND = "UNDERSTAND"      # Comprender
-    APPLY = "APPLY"                # Aplicar
-    ANALYZE = "ANALYZE"            # Analizar
-    EVALUATE = "EVALUATE"          # Evaluar
-    CREATE = "CREATE"              # Crear
-    NOT_DETERMINED = "NOT_DETERMINED"
-```
-
-**Descripción pedagógica:**
-- **REMEMBER:** Recuperar conocimiento de memoria
-- **UNDERSTAND:** Construir significado del material
-- **APPLY:** Usar información en situaciones nuevas
-- **ANALYZE:** Descomponer y determinar relaciones
-- **EVALUATE:** Juicios basados en criterios
-- **CREATE:** Formar algo nuevo y coherente
-
-#### TransversalCompetency
-
-```python
-class TransversalCompetencyEnum(str, Enum):
-    COMMUNICATION = "COMMUNICATION"
-    TEAMWORK = "TEAMWORK"
-    LEARNING_SELF_REGULATION = "LEARNING_SELF_REGULATION"
-    CRITICAL_THINKING = "CRITICAL_THINKING"
-    NOT_DETERMINED = "NOT_DETERMINED"
-```
-
-#### TeachingStrategy
-
-```python
-class TeachingStrategyEnum(str, Enum):
-    LECTURE = "LECTURE"                    # Clase magistral
-    DEBATE = "DEBATE"                      # Debate
-    TEAMWORK = "TEAMWORK"                  # Trabajo en equipo
-    FIELD_ACTIVITY = "FIELD_ACTIVITY"      # Actividad de campo
-    PRACTICAL_ACTIVITY = "PRACTICAL_ACTIVITY"
-    LABORATORY_PRACTICES = "LABORATORY_PRACTICES"
-    TESTS = "TESTS"
-    RESEARCH_ACTIVITIES = "RESEARCH_ACTIVITIES"
-    FLIPPED_CLASSROOM = "FLIPPED_CLASSROOM"
-    DISCUSSION = "DISCUSSION"
-    SMALL_GROUP_TUTORIALS = "SMALL_GROUP_TUTORIALS"
-    PROJECTS = "PROJECTS"
-    CASE_STUDY = "CASE_STUDY"
-    OTHER = "OTHER"
-    NOT_DETERMINED = "NOT_DETERMINED"
-```
-
-#### SustainableDevelopmentGoal (ODS)
-
-```python
-class SustainableDevelopmentGoalEnum(str, Enum):
-    SDG_1 = "SDG_1"    # Fin de la pobreza
-    SDG_2 = "SDG_2"    # Hambre cero
-    SDG_3 = "SDG_3"    # Salud y bienestar
-    SDG_4 = "SDG_4"    # Educación de calidad ⭐
-    SDG_5 = "SDG_5"    # Igualdad de género
-    SDG_6 = "SDG_6"    # Agua limpia
-    SDG_7 = "SDG_7"    # Energía asequible
-    SDG_8 = "SDG_8"    # Trabajo decente ⭐
-    SDG_9 = "SDG_9"    # Innovación ⭐
-    SDG_10 = "SDG_10"  # Reducción de desigualdades
-    SDG_11 = "SDG_11"  # Ciudades sostenibles
-    SDG_12 = "SDG_12"  # Consumo responsable
-    SDG_13 = "SDG_13"  # Acción por el clima
-    SDG_14 = "SDG_14"  # Vida submarina
-    SDG_15 = "SDG_15"  # Vida terrestre
-    SDG_16 = "SDG_16"  # Paz y justicia
-    SDG_17 = "SDG_17"  # Alianzas
-```
-
-#### UniversalDesignLearningPrinciple (DUA)
-
-```python
-class UniversalDesignLearningPrincipleEnum(str, Enum):
-    MEANS_OF_ENGAGEMENT = "MEANS_OF_ENGAGEMENT"
-    MEANS_OF_REPRESENTATION = "MEANS_OF_REPRESENTATION"
-    MEANS_OF_ACTION_EXPRESSION = "MEANS_OF_ACTION_EXPRESSION"
-    NONE = "NONE"
-```
-
-### DTOs Principales
-
-#### CoursePlanningDTO
-
-```python
-class CoursePlanningDTO(BaseModel):
-    id: Optional[int]
-    shift: ShiftEnum
-    description: str
-    startDate: str
-    endDate: str
-    partialGradingSystem: PartialGradingSystemEnum
-    hoursPerDeliveryFormat: Dict[str, int]
-    isRelatedToInvestigation: bool
-    involvesActivitiesWithProductiveSector: bool
-    sustainableDevelopmentGoals: List[SustainableDevelopmentGoalEnum]
-    universalDesignLearningPrinciples: List[UniversalDesignLearningPrincipleEnum]
-    curricularUnit: Optional[CurricularUnitDTO]
-    weeklyPlannings: List[WeeklyPlanningDTO]
-```
-
-#### ActivityDTO
-
-```python
-class ActivityDTO(BaseModel):
-    id: Optional[int]
-    description: str
-    durationInMinutes: int
-    cognitiveProcesses: List[CognitiveProcessEnum]
-    transversalCompetencies: List[TransversalCompetencyEnum]
-    learningModality: LearningModalityEnum
-    teachingStrategies: List[TeachingStrategyEnum]
-    learningResources: List[LearningResourceEnum]
-```
-
-#### ChatState
-
-```python
-@dataclass
-class ChatState:
-    session_id: str
-    input: str
-    history: List[Dict[str, Any]]
-    planning: Optional[Dict[str, Any]]
-```
-
----
-
-## ⚙️ Configuración e Instalación
-
-### Requisitos Previos
-
-- **Python:** 3.9 o superior
-- **OpenAI API Key:** Cuenta activa con créditos
-- **Sistema Operativo:** Windows, Linux o macOS
-
-### Instalación
-
-#### 1. Clonar el Repositorio
-
-```bash
-git clone https://github.com/tu-org/utec-planificador-ai.git
-cd utec-planificador-ai
-```
-
-#### 2. Crear Entorno Virtual
-
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
-
-# Linux/macOS
-python3 -m venv venv
-source venv/bin/activate
-```
-
-#### 3. Instalar Dependencias
-
-```bash
-pip install -r requirements.txt
-```
-
-O usando pyproject.toml:
-
-```bash
-pip install -e .
-```
-
-**Dependencias principales:**
-- fastapi>=0.104.0
-- uvicorn>=0.24.0
-- openai>=1.0.0
-- python-dotenv>=1.0.0
-- pydantic>=2.0.0
-
-#### 4. Configurar Variables de Entorno
-
-Crear archivo `.env` en la raíz del proyecto:
-
-```env
-OPENAI_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-**⚠️ IMPORTANTE:** Nunca commitear el archivo `.env` al repositorio.
-
-### Ejecutar el Servidor
-
-#### Modo Desarrollo
-
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-#### Modo Producción
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
-```
-
-### Verificar Instalación
-
-**Health Check:**
-```bash
-curl http://localhost:8000/health
-```
-
-**Respuesta esperada:**
-```json
+2025-12-10 12:35:30 - SECURITY EVENT: SQL_INJECTION_ATTEMPT
 {
-  "status": "healthy"
+  "session_id": "user-123",
+  "pattern": "'; DROP TABLE--",
+  "severity": "WARNING"
 }
 ```
 
-**Swing:**
-```
-http://localhost:8000/docs
-```
+---
 
-### Integración con Backend Java
+## Base de Datos
 
-Para que el backend Java (planificador-utec-be) pueda consumir este microservicio, configurar en su `application.properties` o `application.yml`:
+### Esquema
 
-```yaml
-# application.yml
-ai:
-  service:
-    url: http://localhost:8000
-    timeout: 30000  # 30 segundos
-```
+**chat_messages:**
+```sql
+CREATE TABLE chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-O para ambientes productivos con Docker:
-
-```yaml
-ai:
-  service:
-    url: http://utec-planificador-ai:8000
+CREATE INDEX idx_session_messages ON chat_messages(session_id, created_at);
 ```
 
-### Configuración Avanzada
-
-#### Ajustar Timeouts de Sesión
-
-Editar `app/graph/utils.py`:
-
-```python
-SESSION_TIMEOUT_MINUTES = 30       # Cambiar de 20 a 30 minutos
-CLEANUP_INTERVAL_SECONDS = 600     # Cambiar de 5 a 10 minutos
+**session_metadata:**
+```sql
+CREATE TABLE session_metadata (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    message_count INTEGER DEFAULT 0
+);
 ```
 
-#### Configurar Modelo GPT
+### Migración a PostgreSQL (Producción)
 
-Editar `app/graph/chatbot_graph.py`:
-
-```python
-def _call_openai(self, messages: list, model: str = "gpt-4o"):  # Cambiar modelo
-    # ...
+**Actualizar `DATABASE_URL` en `.env`:**
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/utec_planificador
 ```
 
-#### Logging
+**Instalar driver:**
+```bash
+pip install psycopg2-binary
+```
 
-Configuración en `app/main.py`:
+El sistema detectará automáticamente el tipo de base de datos por la URL.
 
-```python
-logging.basicConfig(
-    level=logging.DEBUG,  # Cambiar nivel de logging
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('app.log')  # Agregar archivo de log
-    ]
-)
+### Limpieza Automática
+
+**Configuración recomendada:**
+- Eliminar mensajes antiguos después de 90 días
+- Mantener solo últimos 100 mensajes por sesión activa
+- Comprimir sesiones inactivas después de 30 días
+
+---
+
+## Estructura del Proyecto
+
+```
+utec-planificador-ai/
+├── app/
+│   ├── main_v2.py                    # Aplicación principal FastAPI
+│   ├── agents/                       # Agentes con LangGraph
+│   │   ├── chatbot_agent.py          # Agente pedagógico principal
+│   │   └── state.py                  # Estado del chatbot
+│   ├── api/                          # Capa de API
+│   │   ├── schemas/                  # DTOs Pydantic
+│   │   │   ├── chat_dto.py
+│   │   │   ├── suggestion_dto.py
+│   │   │   ├── report_dto.py
+│   │   │   ├── report_schemas.py     # Schemas de respuesta
+│   │   │   └── suggestion_schemas.py
+│   │   └── v2/                       # Endpoints V2
+│   │       ├── chatbot_routes.py
+│   │       ├── suggestion_routes.py
+│   │       └── report_routes.py
+│   ├── core/                         # Configuración y constantes
+│   │   ├── config.py                 # Settings con Pydantic
+│   │   ├── prompts.py                # Prompts centralizados
+│   │   ├── json_schemas.py           # JSON Schemas OpenAI
+│   │   ├── constants.py              # Constantes (ODS, etc)
+│   │   └── security.py               # Validación de seguridad
+│   ├── database/                     # Capa de datos
+│   │   ├── models.py                 # Modelos SQLAlchemy
+│   │   └── repository.py             # Repositorio de datos
+│   └── services/                     # Lógica de negocio
+│       ├── chatbot_service.py
+│       ├── suggestion_service.py
+│       └── report_service.py
+├── scripts/                          # Scripts de utilidad
+│   ├── start_v2.bat
+│   ├── start_v2.sh
+│   └── start_v2.ps1
+├── .env                              # Variables de entorno
+├── .env.example                      # Ejemplo de configuración
+├── pyproject.toml                    # Configuración del proyecto
+├── requirements.txt                  # Dependencias
+└── README.md                         # Este archivo
 ```
 
 ---
 
-## 💡 Casos de Uso
+## Uso y Ejemplos
 
-### Caso 1: Consulta Pedagógica General
+### Ejemplo 1: Chatbot Simple
 
-**Escenario:** Un docente quiere aprender sobre una metodología.
-
-**Flujo completo del sistema:**
-
-```
-1. Docente escribe en el chat del Frontend: 
-   "¿Cómo implemento el Aprendizaje Basado en Proyectos en mi curso de ingeniería?"
-
-2. Frontend envía request al Backend Java
-
-3. Backend Java:
-   - Valida sesión y permisos del usuario
-   - Obtiene el session_id del docente
-   - Prepara el request para el microservicio IA
-
-4. Backend Java → Microservicio IA (POST /agent/chat/message)
-
-5. Microservicio IA:
-   - Validador verifica que es consulta pedagógica → ✅ VÁLIDA
-   - Sistema recupera historial de la sesión
-   - Construye contexto con historial previo
-   - Llama a GPT-4o-mini con el prompt
-   - Guarda respuesta en historial
-   - Retorna respuesta al Backend Java
-
-6. Backend Java recibe la respuesta y la retorna al Frontend
-
-7. Frontend muestra la respuesta al docente
-```
-
-**Request directo al microservicio (solo para pruebas):**
 ```bash
-curl -X POST "http://localhost:8000/agent/chat/message" \
+curl -X POST http://localhost:8000/agent/chat/message \
   -H "Content-Type: application/json" \
   -d '{
-    "session_id": "prof_001",
-    "message": "¿Cómo implemento el Aprendizaje Basado en Proyectos en mi curso de ingeniería?"
+    "session_id": "test-user",
+    "message": "¿Qué son los ODS?"
   }'
 ```
 
-**Beneficio:** El docente recibe asesoramiento pedagógico experto sin necesidad de buscar en múltiples fuentes, mientras el backend Java mantiene control sobre la autenticación y el contexto del usuario.
+### Ejemplo 2: Chatbot con Contexto
 
----
-
-### Caso 2: Análisis de Planificación Existente
-
-**Escenario:** Un docente tiene una planificación y quiere retroalimentación.
-
-**Flujo completo del sistema:**
-
-```
-1. Docente solicita análisis desde el Frontend
-
-2. Frontend → Backend Java (solicitud de análisis)
-
-3. Backend Java:
-   - Valida permisos del usuario sobre esa planificación
-   - Recupera la planificación completa desde BD (entidades JPA)
-   - Convierte las entidades a DTOs
-   - Prepara request para el microservicio IA
-
-4. Backend Java → Microservicio IA (POST /agent/suggestions)
-
-5. Microservicio IA:
-   - Recibe planificación completa
-   - Extrae métricas clave:
-     • Distribución de procesos cognitivos
-     • Estrategias de enseñanza utilizadas
-     • Recursos de aprendizaje
-     • Vinculación con ODS
-   - Envía a GPT-4o-mini para análisis profundo
-   - Recibe análisis estructurado + sugerencias
-   - Retorna al Backend Java
-
-6. Backend Java:
-   - Opcionalmente almacena el análisis en BD
-   - Registra la acción en logs/auditoría
-   - Retorna al Frontend
-
-7. Frontend muestra el análisis al docente
-```
-
-**Request directo al microservicio (solo para pruebas):**
 ```bash
-curl -X POST "http://localhost:8000/agent/suggestions" \
-  -H "Content-Type: application/json" \
-  -d @planificacion.json
-```
-
-**Resultado:** El docente obtiene:
-- Análisis objetivo de su planificación
-- Identificación de fortalezas y debilidades
-- 5-8 sugerencias concretas y accionables
-- El análisis queda registrado en el sistema principal para futuras referencias
-
----
-
-### Caso 3: Generación de Reporte de Calidad
-
-**Escenario:** Coordinador académico necesita evaluar la calidad de un curso.
-
-**Flujo completo del sistema:**
-
-```
-1. Coordinador solicita reporte desde el Frontend
-
-2. Frontend → Backend Java (solicitud de reporte)
-
-3. Backend Java:
-   - Valida permisos del coordinador
-   - Recupera la planificación completa desde BD
-   - Calcula estadísticas del curso:
-     • Distribución de procesos cognitivos
-     • Balance de modalidades
-     • Frecuencia de estrategias
-     • Recursos utilizados
-   - Prepara request con estadísticas + planificación
-
-4. Backend Java → Microservicio IA (POST /agent/report/generate)
-
-5. Microservicio IA:
-   - Recibe estadísticas + planificación
-   - Analiza contra criterios pedagógicos:
-     • Balance cognitivo
-     • Diversidad metodológica
-     • Alineación con ODS
-     • Aplicación de UDL
-   - GPT-4o-mini genera reporte estructurado
-   - Sistema calcula rating general
-   - Retorna reporte completo al Backend Java
-
-6. Backend Java:
-   - Almacena el reporte en BD con timestamp
-   - Vincula el reporte al curso y coordinador
-   - Genera PDF (opcional)
-   - Retorna al Frontend
-
-7. Frontend muestra el reporte al coordinador
-```
-
-**Request directo al microservicio (solo para pruebas):**
-```bash
-curl -X POST "http://localhost:8000/agent/report/generate" \
-  -H "Content-Type: application/json" \
-  -d @report_request.json
-```
-
-**Resultado:** El coordinador obtiene:
-- Rating de calidad (⭐⭐⭐⭐)
-- Score numérico (85/100)
-- Análisis detallado por criterio
-- Fortalezas identificadas
-- Áreas de mejora priorizadas
-- Recomendaciones específicas
-- Historial de reportes previos del curso (almacenado en BD por el backend Java)
-
----
-
-### Caso 4: Chat Contextual con Planificación
-
-**Escenario:** Docente quiere consejos específicos sobre su planificación de Gastronomía.
-
-**Request:**
-```bash
-curl -X POST "http://localhost:8000/agent/chat/message" \
+curl -X POST http://localhost:8000/agent/chat/message \
   -H "Content-Type: application/json" \
   -d '{
-    "session_id": "prof_gastronomia",
-    "message": "Dame ideas de recetas para enseñar técnicas de emplatado",
+    "session_id": "teacher@utec.edu.uy",
+    "message": "Dame sugerencias para mi planificación",
     "coursePlanning": {
-      "curricularUnit": {"name": "Gastronomía Avanzada"},
-      "description": "Curso de técnicas culinarias profesionales"
+      "curricularUnit": {"name": "Química Básica"},
+      "description": "Curso introductorio de química"
     }
   }'
 ```
 
-**Flujo:**
-1. Validador detecta contexto de Gastronomía
-2. Pregunta sobre recetas es VÁLIDA (relacionada con el curso)
-3. Sistema incorpora contexto de planificación
-4. GPT-4o-mini responde con recetas + enfoque pedagógico
-5. Respuesta es educativa y relevante al curso
+### Ejemplo 3: Generar Sugerencias
 
-**Beneficio:** El sistema entiende el contexto académico y proporciona contenido relevante para la enseñanza.
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/agent/suggestions/generate",
+    json={
+        "coursePlanning": {
+            "curricularUnit": {"name": "Programación", "credits": 6},
+            "weeklyPlannings": [...]
+        }
+    }
+)
+
+result = response.json()
+print(result["analysis"])
+print(result["pedagogicalSuggestions"])
+```
+
+### Ejemplo 4: Generar Reporte
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/agent/report/generate",
+    json={
+        "courseId": "curso-123",
+        "statistics": {
+            "cognitiveProcesses": {"REMEMBER": 10, "UNDERSTAND": 15},
+            "totalWeeks": 16,
+            "totalInPersonHours": 120
+        },
+        "coursePlanning": {...}
+    }
+)
+
+report = response.json()["report"]
+print(f"Mensaje: {report['message']}")
+print(f"Fortalezas: {report['strengths']}")
+print(f"Áreas de mejora: {report['improvementAreas']}")
+```
 
 ---
 
-### Caso 5: Conversación Continua con Memoria
+## Contribución y Desarrollo
 
-**Escenario:** Docente mantiene una conversación extendida sobre su curso.
+### Requisitos de Desarrollo
 
-**Secuencia:**
+- Python 3.9+
+- Editor con soporte para Python (VS Code, PyCharm)
+- Git
+- OpenAI API Key (para testing)
 
-**Mensaje 1:**
-```json
-{
-  "session_id": "prof_123",
-  "message": "Quiero mejorar mi curso de programación"
+### Flujo de Trabajo
+
+1. **Fork y clonar:**
+```bash
+git clone https://github.com/tu-usuario/utec-planificador-ai.git
+cd utec-planificador-ai
+```
+
+2. **Crear rama de feature:**
+```bash
+git checkout -b feature/nueva-funcionalidad
+```
+
+3. **Desarrollar y probar:**
+```bash
+# Instalar dependencias de desarrollo
+pip install -r requirements-dev.txt
+
+# Ejecutar tests
+pytest
+
+# Verificar estilo de código
+flake8 app/
+black app/ --check
+```
+
+4. **Commit y push:**
+```bash
+git add .
+git commit -m "feat: descripción de la nueva funcionalidad"
+git push origin feature/nueva-funcionalidad
+```
+
+5. **Crear Pull Request**
+
+### Convenciones de Código
+
+- **Estilo:** PEP 8
+- **Docstrings:** Google Style
+- **Type hints:** Obligatorios en funciones públicas
+- **Imports:** Agrupados (stdlib, third-party, local)
+
+### Testing
+
+```bash
+# Ejecutar todos los tests
+pytest
+
+# Con cobertura
+pytest --cov=app --cov-report=html
+
+# Tests específicos
+pytest tests/test_chatbot.py
+```
+
+### Actualización de Prompts
+
+Los prompts están centralizados en `app/core/prompts.py`:
+
+```python
+# Actualizar un prompt
+SYSTEM_PROMPT = """
+Nueva versión del prompt...
+"""
+
+# Actualizar JSON Schema
+REPORT_JSON_SCHEMA = {
+    "type": "json_schema",
+    "json_schema": { ... }
 }
 ```
 
-**Respuesta 1:** "Para ayudarte mejor, ¿podrías compartir qué aspectos específicos te preocupan? Por ejemplo: evaluación, metodología, recursos..."
+---
 
-**Mensaje 2:**
-```json
-{
-  "session_id": "prof_123",
-  "message": "Principalmente la evaluación, creo que dependo demasiado de exámenes"
-}
+## Troubleshooting
+
+### Problema: "OPENAI_KEY is not configured"
+
+**Solución:** Verificar que el archivo `.env` existe y contiene la API key:
+```bash
+cat .env | grep OPENAI_KEY
 ```
 
-**Respuesta 2:** "Entiendo tu preocupación sobre la evaluación. Te sugiero diversificar con: 1) Proyectos prácticos (30%), 2) Code reviews entre pares (20%), 3) Portafolio de código (20%), 4) Exámenes conceptuales (30%)..."
+### Problema: "Cannot connect to database"
 
-**Mensaje 3:**
-```json
-{
-  "session_id": "prof_123",
-  "message": "¿Cómo implemento el code review entre pares?"
-}
+**Solución:** Verificar permisos del archivo SQLite o conexión a PostgreSQL:
+```bash
+ls -l utec_planificador.db
 ```
 
-**Flujo:**
-1. Sistema recupera historial de `prof_123`
-2. Contexto: Curso de programación + preocupación por evaluación
-3. GPT-4o-mini responde con guía específica de code review
-4. Respuesta es coherente con la conversación previa
+### Problema: "Port 8000 already in use"
 
-**Beneficio:** Experiencia conversacional natural con memoria de contexto.
+**Solución:** Cambiar el puerto o detener el proceso:
+```bash
+# Cambiar puerto
+uvicorn app.main_v2:app --port 8001
 
----
+# O detener proceso en Windows
+netstat -ano | findstr :8000
+taskkill /PID <PID> /F
+```
 
-## 📊 Costos y Performance
+### Problema: Respuestas lentas
 
-### Costos Estimados (GPT-4o-mini)
+**Causas comunes:**
+- Red lenta a OpenAI API
+- Prompt muy largo
+- Historial de conversación muy extenso
 
-| Operación              | Tokens Aprox. | Costo por Llamada | Llamadas con $5 USD |
-|------------------------|---------------|-------------------|---------------------|
-| Chat simple            | 300-500       | ~$0.0005-0.001    | ~5,000-10,000       |
-| Chat con planificación | 800-1,200     | ~$0.001-0.002     | ~2,500-5,000        |
-| Sugerencias            | 1,500-2,000   | ~$0.003-0.005     | ~1,000-1,600        |
-| Reporte                | 2,000-2,500   | ~$0.004-0.006     | ~800-1,250          |
-
-**Total estimado:** Con $5 USD puedes realizar aproximadamente:
-- 5,000 consultas de chat simples
-- 1,000 análisis de planificación completos
-- 800 reportes detallados
-
-### Performance
-
-**Tiempos de Respuesta Promedio:**
-- Chat simple: 1-2 segundos
-- Chat con planificación: 2-3 segundos
-- Sugerencias: 3-5 segundos
-- Reportes: 4-6 segundos
-
-**Capacidad:**
-- Sesiones concurrentes: Limitado por memoria RAM
-- Limpieza automática: Mantiene memoria estable
-- Escalabilidad: Horizontal (múltiples workers Uvicorn)
+**Soluciones:**
+- Reducir `SESSION_MAX_MESSAGES`
+- Optimizar prompts
+- Implementar cache de respuestas
 
 ---
-
-## 🚀 Próximos Pasos y Mejoras
-
-### Corto Plazo
-
-- [ ] Implementar autenticación interna entre servicios (API Key o mTLS)
-- [ ] Agregar rate limiting a nivel de microservicio
-- [ ] Métricas y monitoreo (Prometheus)
-**Última actualización:** 3 de Diciembre, 2025  
-**Versión:** 1.1.0
-### Mediano Plazo
-
-- [ ] Persistencia de sesiones (Redis)
-- [ ] Soporte para múltiples idiomas
-- [ ] Dashboard de analíticas
-- [ ] Integración con bases de datos institucionales
-
-### Largo Plazo
-
-- [ ] Fine-tuning de modelo específico para UTEC
-- [ ] Sistema de recomendaciones proactivas
-- [ ] Análisis predictivo de calidad
-- [ ] Integración con LMS (Moodle, Canvas)
-
----
-
-**Última actualización:** 26 de Noviembre, 2025  
-**Versión:** 1.0.0
 
