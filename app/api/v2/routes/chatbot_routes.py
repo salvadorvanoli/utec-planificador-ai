@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
-from app.api.v2.dtos import ChatRequest
+from app.api.v2.dtos import ChatRequest, ChatHistoryResponse
 from app.services.chatbot_service import ChatbotService
 from app.database.models import get_db
 from app.core.security import SecurityViolation
@@ -112,7 +112,7 @@ async def delete_chat_session(
         )
 
 
-@router.get("/chat/session/{session_id}/history")
+@router.get("/chat/session/{session_id}/history", response_model=ChatHistoryResponse)
 async def get_chat_history(
     session_id: str,
     db: Session = Depends(get_db)
@@ -125,11 +125,11 @@ async def get_chat_history(
         db: Database session
 
     Returns:
-        List of messages with timestamps
+        ChatHistoryResponse with list of messages
     """
     try:
-        history = chatbot_service.get_session_history(db, session_id)
-        return {"session_id": session_id, "messages": history}
+        messages = chatbot_service.get_session_history(db, session_id)
+        return ChatHistoryResponse(messages=messages)
 
     except SecurityViolation as e:
         logger.error(f"Security violation in get_chat_history: {e}", exc_info=True)

@@ -1,12 +1,13 @@
 """Chatbot service layer."""
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
 
 from app.agents.chatbot_agent import PedagogicalAgent
 from app.database.repository import ChatRepository
 from app.core.config import get_settings
 from app.core.security import SecurityViolation
+from app.api.v2.dtos import ChatMessageDTO
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +98,7 @@ class ChatbotService:
         repo = ChatRepository(db)
         return repo.delete_session(session_id)
 
-    def get_session_history(self, db: Session, session_id: str):
+    def get_session_history(self, db: Session, session_id: str) -> List[ChatMessageDTO]:
         """
         Get conversation history for a session.
 
@@ -106,16 +107,16 @@ class ChatbotService:
             session_id: Session identifier
 
         Returns:
-            List of messages
+            List of ChatMessageDTO objects
         """
         repo = ChatRepository(db)
         messages = repo.get_session_messages(session_id)
         return [
-            {
-                "role": msg.role,
-                "content": msg.content,
-                "timestamp": msg.created_at.isoformat()
-            }
+            ChatMessageDTO(
+                role=msg.role,
+                content=msg.content,
+                timestamp=msg.created_at.isoformat()
+            )
             for msg in messages
         ]
 

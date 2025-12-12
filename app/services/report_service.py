@@ -67,11 +67,8 @@ class ReportService:
             # Call OpenAI with structured output (uses JSON schema constant)
             response = self.client.chat.completions.create(
                 model=self.settings.openai_model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "Eres un experto en evaluación pedagógica y calidad educativa."
-                    },
+                messages=[ # type: ignore[arg-type]
+                    {"role": "system", "content": "Eres un experto en evaluación pedagógica y calidad educativa."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,

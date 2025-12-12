@@ -52,11 +52,8 @@ class SuggestionService:
             # Call OpenAI with structured output (uses JSON schema constant)
             response = self.client.chat.completions.create(
                 model=self.settings.openai_model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "Eres un experto en pedagogía universitaria y diseño curricular."
-                    },
+                messages=[  # type: ignore[arg-type]
+                    {"role": "system", "content": "Eres un experto en pedagogía universitaria y diseño curricular."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,

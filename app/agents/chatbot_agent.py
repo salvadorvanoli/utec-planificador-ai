@@ -21,6 +21,12 @@ class PedagogicalAgent:
     
     def __init__(self):
         self.settings = get_settings()
+
+        # Validate API key
+        if not self.settings.openai_api_key:
+            logger.error("OPENAI_KEY is not configured in environment variables")
+            raise ValueError("OpenAI API key is not configured")
+
         self.client = OpenAI(api_key=self.settings.openai_api_key)
         self.graph = self._build_graph()
     
@@ -69,7 +75,7 @@ class PedagogicalAgent:
         try:
             response = self.client.chat.completions.create(
                 model=self.settings.openai_model,
-                messages=[
+                messages=[ # type: ignore[arg-type]
                     {"role": "user", "content": validation_prompt}
                 ],
                 temperature=0.3,
@@ -95,32 +101,35 @@ class PedagogicalAgent:
         
         return state
     
+    def _extract_curricular_unit_name(self, planning: Dict[str, Any]) -> str:
+        """Extract curricular unit name from planning data."""
+        if not planning:
+            return ""
+
+        if "curricularUnit" in planning:
+            curricular_unit = planning["curricularUnit"]
+            if isinstance(curricular_unit, dict):
+                return curricular_unit.get("name", "")
+
+        return planning.get("name") or planning.get("subject", "")
+
     def _build_planning_context(self, planning: Dict[str, Any]) -> str:
         """Build context information from planning data."""
         if not planning:
             return ""
         
         context_parts = ["\nContexto de planificación disponible:"]
-        
+
         # Extract curricular unit name
-        curricular_unit_name = ""
-        if "curricularUnit" in planning:
-            curricular_unit = planning["curricularUnit"]
-            if isinstance(curricular_unit, dict):
-                curricular_unit_name = curricular_unit.get("name", "")
-        elif "name" in planning:
-            curricular_unit_name = planning.get("name", "")
-        elif "subject" in planning:
-            curricular_unit_name = planning.get("subject", "")
-        
+        curricular_unit_name = self._extract_curricular_unit_name(planning)
         if curricular_unit_name:
             context_parts.append(f"- Unidad Curricular: {curricular_unit_name}")
-        
+
         # Extract description
         description = planning.get("description", "")
         if description:
             context_parts.append(f"- Descripción del curso: {description[:200]}")
-        
+
         # Extract programmatic content
         if "weeklyPlannings" in planning:
             weekly = planning["weeklyPlannings"]
@@ -132,9 +141,9 @@ class PedagogicalAgent:
                         content_text = contents[0].get("content", "")[:200]
                         if content_text:
                             context_parts.append(f"- Contenido programático: {content_text}")
-        
+
         return "\n".join(context_parts)
-    
+
     def _should_generate_response(self, state: ChatState) -> str:
         """Determine next step based on validation."""
         return "generate" if state.get("is_valid", False) else "reject"
@@ -159,15 +168,7 @@ class PedagogicalAgent:
         # The LLM will decide how to use this information based on the user's query
         planning_context = ""
         if planning:
-            # Extract curricular unit name
-            curricular_unit_name = ""
-            if "curricularUnit" in planning:
-                curricular_unit = planning["curricularUnit"]
-                if isinstance(curricular_unit, dict):
-                    curricular_unit_name = curricular_unit.get("name", "")
-            elif "name" in planning:
-                curricular_unit_name = planning.get("name", "")
-
+            curricular_unit_name = self._extract_curricular_unit_name(planning)
             planning_json = json.dumps(planning, indent=2, ensure_ascii=False)
 
             # Build context with planning information
@@ -191,7 +192,7 @@ class PedagogicalAgent:
         try:
             response = self.client.chat.completions.create(
                 model=self.settings.openai_model,
-                messages=openai_messages,
+                messages=openai_messages,  # type: ignore[arg-type]
                 temperature=self.settings.openai_temperature,
                 max_tokens=self.settings.openai_max_tokens
             )
