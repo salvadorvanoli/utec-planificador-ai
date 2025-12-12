@@ -1,11 +1,5 @@
-try:
-    from pydantic import BaseModel
-    from typing import Optional
-except Exception:
-    class BaseModel:
-        pass
-    Optional = None
-
+from pydantic import BaseModel
+from typing import Optional
 from .planification_dto import CoursePlanningDTO
 
 class ChatRequest(BaseModel):

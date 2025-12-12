@@ -21,7 +21,7 @@ class ChatMessage(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     def to_dict(self):
-        """Convert message to dictionary format for LangChain."""
+        """Convert message to dictionary format."""
         return {
             "role": self.role,
             "content": self.content

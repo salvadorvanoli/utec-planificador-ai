@@ -1,8 +1,7 @@
 """Suggestion API endpoints."""
 import logging
 from fastapi import APIRouter, HTTPException
-from app.api.schemas.planification_dto import CoursePlanningRequestDTO
-from app.api.schemas.suggestion_dto import SuggestionResponse
+from app.api.v2.dtos import CoursePlanningRequestDTO, SuggestionResponse
 from app.services.suggestion_service import SuggestionService
 
 router = APIRouter(tags=["Suggestions"])

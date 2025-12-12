@@ -1,9 +1,7 @@
 """Application configuration settings."""
-import os
 from typing import Optional
 from pydantic_settings import BaseSettings
 from pydantic import Field
-
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""

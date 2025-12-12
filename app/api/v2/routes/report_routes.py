@@ -1,7 +1,7 @@
 """Report API endpoints."""
 import logging
 from fastapi import APIRouter, HTTPException
-from app.api.schemas.report_dto import ReportRequest, ReportResponse
+from app.api.v2.dtos import ReportRequest, ReportResponse
 from app.services.report_service import ReportService
 
 router = APIRouter(tags=["Reports"])

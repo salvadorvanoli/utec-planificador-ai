@@ -4,7 +4,7 @@ from .planification_dto import CoursePlanningDTO
 
 class CourseStatisticsDTO(BaseModel):
     """Statistics extracted from a course planning for analysis"""
-    cognitiveProcesses: Dict[str, int] = {}  # e.g., {"REMEMBER": 10, "UNDERSTAND": 25}
+    cognitiveProcesses: Dict[str, int] = {}
     transversalCompetencies: Dict[str, int] = {}
     learningModalities: Dict[str, int] = {}
     teachingStrategies: Dict[str, int] = {}

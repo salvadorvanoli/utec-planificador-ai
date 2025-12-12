@@ -7,9 +7,9 @@ from openai import OpenAI
 
 from app.core.config import get_settings
 from app.core.prompts import REPORT_PROMPT_TEMPLATE
-from app.core.constants import get_sdg_description
-from app.core.json_schemas import REPORT_JSON_SCHEMA
-from app.api.schemas.report_schemas import (
+from app.schemas import get_sdg_description
+from app.schemas.openai_schemas import REPORT_JSON_SCHEMA
+from app.schemas.internal_schemas import (
     ReportGenerationResult,
     ReportSchema,
     ExecutiveSummarySchema,

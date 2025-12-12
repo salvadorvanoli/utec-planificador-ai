@@ -1,4 +1,4 @@
-"""Response schemas for suggestion generation."""
+"""Response internal_schemas for suggestion generation."""
 from pydantic import BaseModel, Field
 
 

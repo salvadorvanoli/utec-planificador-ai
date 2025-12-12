@@ -1,6 +1,6 @@
-"""Response schemas for report generation."""
+"""Response internal_schemas for report generation."""
 from pydantic import BaseModel, Field
-from typing import Dict, List, Optional
+from typing import List
 
 
 class ExecutiveSummarySchema(BaseModel):

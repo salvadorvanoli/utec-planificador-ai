@@ -5,8 +5,8 @@ from typing import Dict, Any
 from openai import OpenAI
 
 from app.core.prompts import SUGGESTION_PROMPT_TEMPLATE
-from app.core.json_schemas import SUGGESTION_JSON_SCHEMA
-from app.api.schemas.suggestion_schemas import SuggestionGenerationResult
+from app.schemas.openai_schemas import SUGGESTION_JSON_SCHEMA
+from app.schemas.internal_schemas import SuggestionGenerationResult
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)

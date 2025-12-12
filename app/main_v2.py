@@ -11,9 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.database.models import init_database
-from app.api.v2.chatbot_routes import router as chatbot_router
-from app.api.v2.suggestion_routes import router as suggestion_router
-from app.api.v2.report_routes import router as report_router
+from app.api.v2.routes.chatbot_routes import router as chatbot_router
+from app.api.v2.routes.suggestion_routes import router as suggestion_router
+from app.api.v2.routes.report_routes import router as report_router
 
 # Configure logging
 logging.basicConfig(

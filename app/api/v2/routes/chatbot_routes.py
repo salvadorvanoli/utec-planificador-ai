@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
-from app.api.schemas.chat_dto import ChatRequest
+from app.api.v2.dtos import ChatRequest
 from app.services.chatbot_service import ChatbotService
 from app.database.models import get_db
 from app.core.security import SecurityViolation

@@ -6,7 +6,6 @@ from sqlalchemy import desc
 import logging
 
 from app.database.models import ChatMessage, SessionMetadata
-from app.core.config import get_settings
 from app.core.security import validate_all_inputs, SecurityViolation, log_security_event
 
 logger = logging.getLogger(__name__)

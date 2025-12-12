@@ -11,7 +11,7 @@ from app.core.prompts import (
     SYSTEM_PROMPT,
     VALIDATION_PROMPT_TEMPLATE
 )
-from app.core.json_schemas import VALIDATION_JSON_SCHEMA
+from app.schemas.openai_schemas import VALIDATION_JSON_SCHEMA
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +32,10 @@ class PedagogicalAgent:
         workflow.add_node("validate_input", self._validate_input)
         workflow.add_node("generate_response", self._generate_response)
         workflow.add_node("handle_invalid", self._handle_invalid_input)
-        
+
         # Set entry point
         workflow.set_entry_point("validate_input")
-        
+
         # Add conditional edges
         workflow.add_conditional_edges(
             "validate_input",
@@ -49,7 +49,7 @@ class PedagogicalAgent:
         # Add edges to end
         workflow.add_edge("generate_response", END)
         workflow.add_edge("handle_invalid", END)
-        
+
         return workflow.compile()
     
     def _validate_input(self, state: ChatState) -> ChatState:
