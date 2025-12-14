@@ -1,8 +1,6 @@
 # UTEC Planificador AI
 
-**Versión:** 2.0.0  
-**Fecha:** 10 de Diciembre, 2025  
-**Repositorio:** utec-planificador-ai
+**Versión:** 2.0.0
 
 ---
 
@@ -11,60 +9,84 @@
 1. [Descripción General](#descripción-general)
 2. [Arquitectura del Sistema](#arquitectura-del-sistema)
 3. [Novedades de la Versión 2.0](#novedades-de-la-versión-20)
-4. [Instalación y Configuración](#instalación-y-configuración)
+4. [Estructura del Proyecto](#estructura-del-proyecto)
 5. [API Endpoints](#api-endpoints)
 6. [Seguridad](#seguridad)
 7. [Base de Datos](#base-de-datos)
-8. [Estructura del Proyecto](#estructura-del-proyecto)
-9. [Uso y Ejemplos](#uso-y-ejemplos)
-10. [Contribución y Desarrollo](#contribución-y-desarrollo)
+8. [Uso y Ejemplos](#uso-y-ejemplos)
 
 ---
 
 ## Descripción General
 
-UTEC Planificador AI es un microservicio de inteligencia artificial especializado en asistencia pedagógica para planificaciones docentes de la Universidad Tecnológica del Uruguay (UTEC). Utiliza modelos de lenguaje de OpenAI (GPT-4o-mini) para proporcionar:
+UTEC Planificador AI es un **microservicio de inteligencia artificial** especializado en asistencia pedagógica para planificaciones docentes de la Universidad Tecnológica del Uruguay (UTEC). Utiliza modelos de lenguaje de OpenAI (GPT-4o-mini) para proporcionar:
 
 - **Chatbot pedagógico conversacional** con contexto de planificación
-- **Generación de sugerencias** pedagógicas basadas en mejores prácticas educativas
-- **Reportes de evaluación** con análisis detallado de calidad pedagógica
+- **Generación de sugerencias** pedagógicas basadas en mejores prácticas educativas  
+- **Reportes de evaluación** con análisis cualitativo de calidad pedagógica
 
-### Tecnologías Principales
+### Contexto del Sistema
 
-- **Framework Web:** FastAPI 0.104.0
-- **IA/LLM:** OpenAI GPT-4o-mini con Structured Outputs (JSON Schema)
-- **Base de Datos:** SQLite (desarrollo), PostgreSQL (producción)
-- **Validación:** Pydantic 2.0+
-- **Servidor:** Uvicorn con hot-reload
-- **Lenguaje:** Python 3.9+
-- **Arquitectura:** LangGraph para orquestación de agentes
+Este microservicio **NO es consumido directamente por el frontend**. Forma parte de una arquitectura de microservicios donde el backend principal Java Spring Boot (`planificador-utec-be`) actúa como orquestador:
 
-### Características Clave
+```
+Frontend → Backend Java (planificador-utec-be) → Microservicio IA (este servicio) → OpenAI API
+```
 
-- Respuestas estructuradas con JSON Schema garantizado
-- Validación de seguridad contra SQL injection en múltiples capas
-- Soporte multiidioma (español, inglés, portugués)
-- Persistencia de mensajes en base de datos
-- Session IDs flexibles (emails, UUIDs, IDs simples)
-- Prompts y schemas centralizados para fácil mantenimiento
+**Responsabilidades del Backend Java:**
+- Gestión de autenticación, autorización y sesiones de usuario
+- Persistencia de entidades de dominio (planificaciones, usuarios, cursos)
+- Lógica de negocio y validaciones
+- Orquestación de llamadas al microservicio de IA
+- Procesamiento y enriquecimiento de respuestas
+
+**Responsabilidades de este Microservicio:**
+- Análisis pedagógico mediante IA
+- Procesamiento de lenguaje natural
+- Gestión de contexto conversacional (temporal)
+- Integración con OpenAI API
 
 ---
 
 ## Arquitectura del Sistema
 
-### Diagrama de Flujo
+### Diagrama de Arquitectura General
 
 ```
-Frontend → Backend Java (planificador-utec-be) → Microservicio IA (utec-planificador-ai) → OpenAI API
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLIENTE (Frontend)                       │
+│                    (Aplicación Web UTEC)                        │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │ HTTP/REST
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              BACKEND PRINCIPAL - Java Spring Boot               │
+│                   (planificador-utec-be)                        │
+│                                                                 │
+│  • Autenticación y autorización                                 │
+│  • Gestión de entidades (JPA/Hibernate)                         │
+│  • Lógica de negocio                                            │
+│  • Base de datos relacional                                     │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │ HTTP/REST (Cliente interno)
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              MICROSERVICIO IA - Python FastAPI                  │
+│                   (utec-planificador-ai)                        │
+│                                                                 │
+│  • Análisis pedagógico con IA                                   │
+│  • Chatbot conversacional                                       │
+│  • Generación de reportes y sugerencias                         │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │ HTTPS API
+                               ▼
+                    ┌───────────────────────┐
+                    │   OpenAI API          │
+                    │   (GPT-4o-mini)       │
+                    └───────────────────────┘
 ```
 
-El microservicio **NO es consumido directamente por el frontend**. El backend Java Spring Boot actúa como orquestador:
-- Gestiona autenticación, autorización y sesiones
-- Almacena entidades de dominio en base de datos
-- Llama al microservicio IA cuando requiere análisis pedagógico
-- Procesa y enriquece las respuestas antes de retornarlas
-
-### Arquitectura Interna (V2)
+### Arquitectura Interna del Microservicio
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -94,8 +116,8 @@ El microservicio **NO es consumido directamente por el frontend**. El backend Ja
 └─────┬─────┘    ┌──────────────────┐
       │          │   OpenAI API     │
       └─────────►│   (GPT-4o-mini)  │
-                 │  + JSON Schema   │
-                 └──────────────────┘
+      │          │  + JSON Schema   │
+      │          └──────────────────┘
       │
       ▼
 ┌─────────────────────────────────────┐
@@ -231,9 +253,166 @@ app/
 └── services/               # Lógica de negocio
 ```
 
+
 ---
 
-## Instalación y Configuración
+## Estructura del Proyecto
+
+```
+utec-planificador-ai/
+│
+├── app/
+│   ├── __init__.py
+│   ├── main_v2.py                      # Punto de entrada FastAPI
+│   │
+│   ├── agents/                         # Capa de Agentes IA
+│   │   ├── __init__.py
+│   │   ├── chatbot_agent.py            # PedagogicalAgent (LangGraph)
+│   │   └── state.py                    # ChatState (TypedDict)
+│   │
+│   ├── api/                            # Capa de API (Controllers)
+│   │   ├── __init__.py
+│   │   └── v2/                         # Endpoints versión 2
+│   │       ├── __init__.py
+│   │       ├── dtos/                   # Data Transfer Objects
+│   │       │   ├── __init__.py
+│   │       │   ├── chat_dto.py
+│   │       │   ├── report_dto.py
+│   │       │   └── suggestion_dto.py
+│   │       └── routes/                 # Rutas REST
+│   │           ├── __init__.py
+│   │           ├── chatbot_routes.py
+│   │           ├── report_routes.py
+│   │           └── suggestion_routes.py
+│   │
+│   ├── core/                           # Configuración y Utilidades Core
+│   │   ├── __init__.py
+│   │   ├── config.py                   # Settings con Pydantic
+│   │   ├── prompts.py                  # Prompts centralizados
+│   │   ├── security.py                 # Validación y sanitización
+│   │   └── templates/                  # Templates Jinja2 (futuro)
+│   │
+│   ├── database/                       # Capa de Datos
+│   │   ├── __init__.py
+│   │   ├── models.py                   # Modelos SQLAlchemy
+│   │   └── repository.py               # ChatRepository
+│   │
+│   ├── services/                       # Capa de Servicios
+│   │   ├── __init__.py
+│   │   ├── chatbot_service.py          # Lógica de chatbot
+│   │   ├── report_service.py           # Generación de reportes
+│   │   └── suggestion_service.py       # Generación de sugerencias
+│   │
+│   └── schemas/                        # Schemas
+│       ├── __init__.py
+│       ├── enum_descriptions.py        # Descripciones de enums
+│       ├── internal_schemas/           # Schemas Pydantic internos
+│       │   ├── __init__.py
+│       │   ├── report_schemas.py
+│       │   └── suggestion_schemas.py
+│       └── openai_schemas/             # JSON Schemas para OpenAI
+│           ├── __init__.py
+│           ├── report_schema.py
+│           ├── suggestion_schema.py
+│           └── validation_schema.py
+│
+├── local-scripts/                      # Scripts de utilidad
+│   ├── explorar_db.py
+│   ├── migrate_to_v2.py
+│   ├── start_v2.bat                    # Windows
+│   ├── start_v2.sh                     # Linux/Mac
+│   └── verificar_db.py
+│
+├── scripts/                            # Scripts de deployment
+│   ├── logs.ps1
+│   ├── start.ps1
+│   ├── status.ps1
+│   └── stop.ps1
+│
+├── .env                                # Variables de entorno (git-ignored)
+├── .env.example                        # Template de configuración
+├── .gitignore
+├── docker-compose.yml                  # Orquestación Docker
+├── docker-compose.prod.yml             # Configuración producción
+├── Dockerfile                          # Imagen Docker multi-stage
+├── pyproject.toml                      # Dependencias del proyecto
+├── README.md                           # Este archivo
+├── EJECUCION_PROYECTO.md               # Documentación de ejecución
+└── utec_planificador.db                # Base de datos SQLite (local)
+```
+
+### Descripción de Componentes
+
+#### **Agents Layer** (`app/agents/`)
+- **chatbot_agent.py:** `PedagogicalAgent` - Núcleo del sistema con LangGraph
+  - Validación de relevancia educativa
+  - Generación de respuestas con contexto
+  - Manejo de flujos condicionales
+- **state.py:** Definición de `ChatState` (TypedDict) para el grafo
+
+#### **API Layer** (`app/api/v2/`)
+- **routes/:** Endpoints REST (Controllers)
+  - Validación de requests HTTP
+  - Manejo de errores con HTTPException
+  - Dependency injection con FastAPI Depends()
+- **dtos/:** Data Transfer Objects con Pydantic
+  - Validación automática de entrada
+  - Serialización de respuestas
+
+#### **Core Layer** (`app/core/`)
+- **config.py:** Configuración con Pydantic Settings
+  - Carga variables desde .env
+  - Validación de configuración requerida
+  - Singleton pattern para settings
+- **prompts.py:** Templates de prompts centralizados
+  - `SYSTEM_PROMPT`: Instrucciones base del asistente
+  - `VALIDATION_PROMPT_TEMPLATE`: Validación de relevancia
+  - `SUGGESTION_PROMPT_TEMPLATE`: Generación de sugerencias
+  - `REPORT_PROMPT_TEMPLATE`: Generación de reportes
+- **security.py:** Módulo de seguridad
+  - Sanitización de inputs
+  - Detección de SQL injection
+  - Validación de session IDs
+  - Logging de eventos de seguridad
+
+#### **Database Layer** (`app/database/`)
+- **models.py:** Modelos SQLAlchemy
+  - `ChatMessage`: Mensajes de conversación
+  - `SessionMetadata`: Metadata de sesiones
+  - `Base`: Declarative base de SQLAlchemy
+- **repository.py:** `ChatRepository` - Patrón Repository
+  - `add_message()`: Insertar mensaje con validación
+  - `get_session_messages()`: Recuperar historial
+  - `delete_session()`: Eliminar sesión
+  - `trim_session_messages()`: Limitar mensajes antiguos
+
+#### **Services Layer** (`app/services/`)
+- **chatbot_service.py:** `ChatbotService`
+  - Orquestación del flujo de chat
+  - Construcción de `ChatState`
+  - Manejo de historial y contexto
+- **report_service.py:** `ReportService`
+  - Análisis de estadísticas y planificación
+  - Generación de reportes con OpenAI
+  - Parsing y validación de respuestas
+- **suggestion_service.py:** `SuggestionService`
+  - Análisis pedagógico de planificación
+  - Generación de sugerencias accionables
+
+#### **Schemas** (`app/schemas/`)
+- **internal_schemas/:** Pydantic models para validación interna
+  - Estructuras de datos del sistema
+  - Response models
+- **openai_schemas/:** JSON Schemas para OpenAI Structured Outputs
+  - Garantizan formato de respuestas
+  - Validados por OpenAI API
+- **enum_descriptions.py:** Descripciones de enumeraciones
+  - ODS (Objetivos de Desarrollo Sostenible)
+  - Procesos cognitivos (Taxonomía de Bloom)
+  - Competencias transversales
+  - Estrategias de enseñanza
+
+
 
 ### Requisitos Previos
 
@@ -268,7 +447,7 @@ source .venv/bin/activate
 
 4. **Instalar dependencias:**
 ```bash
-pip install -r requirements.txt
+pip install .
 ```
 
 ### Configuración
@@ -547,79 +726,197 @@ POST /agent/report/generate   (alias)
 
 ### Protección contra SQL Injection
 
-**Sistema de 6 capas:**
+El sistema implementa **6 capas de defensa en profundidad:**
 
-1. **ORM de SQLAlchemy:** Queries parametrizadas automáticas (99% efectividad)
-2. **Módulo de Seguridad:** Validación y sanitización (95% efectividad)
-3. **Repositorio:** Validación pre-base de datos (90% efectividad)
-4. **Servicio:** Manejo de excepciones (85% efectividad)
-5. **API:** Respuestas HTTP apropiadas (80% efectividad)
-6. **Logging:** Auditoría completa (100% detección)
+#### **Capa 1: SQLAlchemy ORM**
+Todas las queries usan el ORM que genera automáticamente queries parametrizadas:
+```python
+# ✅ Seguro: Query parametrizada automática
+message = ChatMessage(session_id=session_id, content=content)
+db.add(message)
 
-**Efectividad total combinada: 99.9%**
+# ❌ NUNCA usado: Concatenación directa
+db.execute(f"INSERT INTO messages VALUES ('{session_id}', '{content}')")
+```
+
+#### **Capa 2: Módulo de Seguridad**
+Validación con expresiones regulares y detección de patrones:
+```python
+# core/security.py
+SQL_INJECTION_PATTERNS = [
+    r"(\bUNION\b.*\bSELECT\b)",
+    r"(\bDROP\b.*\bTABLE\b)",
+    r"(\bDELETE\b.*\bFROM\b)",
+    r"(;.*(-{2}|#|\\/\\*))",  # SQL comments
+    # ... 15+ patrones
+]
+```
+
+#### **Capa 3: Repository Layer**
+Validación antes de cada operación de base de datos:
+```python
+# database/repository.py
+def add_message(self, session_id: str, role: str, content: str):
+    # Validar y sanitizar TODOS los inputs
+    clean_session_id, clean_role, clean_content = validate_all_inputs(
+        session_id, role, content
+    )
+    # Usar ORM con datos limpios
+    message = ChatMessage(session_id=clean_session_id, ...)
+```
+
+#### **Capa 4: Service Layer**
+Manejo de excepciones `SecurityViolation`:
+```python
+# services/chatbot_service.py
+try:
+    repo.add_message(session_id, "user", user_input)
+except SecurityViolation as e:
+    logger.error(f"Security violation: {e}")
+    raise HTTPException(status_code=400, detail="Invalid input")
+```
+
+#### **Capa 5: API Layer**
+Respuestas HTTP apropiadas sin exponer detalles internos:
+```python
+# api/v2/routes/chatbot_routes.py
+except SecurityViolation:
+    raise HTTPException(status_code=400, detail="Invalid input format")
+except Exception:
+    raise HTTPException(status_code=500, detail="Internal server error")
+```
+
+#### **Capa 6: Logging y Auditoría**
+Registro completo de intentos de ataque:
+```python
+def log_security_event(event_type: str, details: dict):
+    logger.warning(f"SECURITY: {event_type}", extra=details)
+```
 
 ### Validación de Session IDs
 
-**Caracteres permitidos:** `a-z, A-Z, 0-9, _, -, @, .`
+**Regex de validación:**
+```python
+# Permitido: letras, números, guiones, guiones bajos, arroba, punto
+r'^[a-zA-Z0-9._@-]+$'
+```
 
-**Caracteres bloqueados:** `', ", ;, --, /*, */, <, >, &, ?`
+**Formatos válidos:**
+- ✅ `juan.perez@utec.edu.uy` (email)
+- ✅ `550e8400-e29b-41d4-a716-446655440000` (UUID)
+- ✅ `user-123` (ID simple)
+- ✅ `session_abc_456` (alfanumérico)
 
-**Longitud máxima:** 255 caracteres
+**Formatos rechazados:**
+- ❌ `user'; DROP TABLE--` (SQL injection)
+- ❌ `admin' OR '1'='1` (bypass attempt)
+- ❌ `<script>alert('xss')</script>` (XSS)
 
-**Ejemplos válidos:**
-- `juan.perez@utec.edu.uy`
-- `550e8400-e29b-41d4-a716-446655440000`
-- `user-123`
-
-**Ejemplos bloqueados:**
-- `user'; DROP TABLE--`
-- `admin' OR '1'='1`
+**Límites:**
+- Longitud máxima: 255 caracteres
+- Longitud mínima: 1 carácter
 
 ### Validación de Contenido
 
-**Longitud máxima:** 50,000 caracteres por mensaje
+**Límites:**
+- Longitud máxima por mensaje: 50,000 caracteres (50KB)
+- Rol máximo: 20 caracteres
 
-**Patrones peligrosos bloqueados:**
-- `'; DROP TABLE`
-- `'; DELETE FROM`
-- `'; UPDATE SET`
-- `OR 1=1--`
-- `UNION SELECT`
-
-**Modo educativo:** Permite discutir SQL sin bloquear consultas legítimas como "¿Qué es SELECT en SQL?"
-
-### Logging de Seguridad
-
-Todos los intentos de inyección se registran:
+**Patrones SQL peligrosos bloqueados:**
 ```
-2025-12-10 12:35:30 - SECURITY EVENT: SQL_INJECTION_ATTEMPT
+DROP TABLE, DELETE FROM, UPDATE SET, INSERT INTO
+UNION SELECT, EXEC, EXECUTE, xp_cmdshell
+--, #, /* */, @@, INFORMATION_SCHEMA
+OR 1=1, ' OR '1'='1, ' OR 'a'='a
+```
+
+**Modo educativo:** El sistema permite discutir SQL legítimamente (ejemplo: "¿Qué hace SELECT en SQL?") sin bloquear la consulta.
+
+### Roles Permitidos
+
+Solo se aceptan roles estándar de chat:
+- `user` - Mensajes del usuario
+- `assistant` - Respuestas del asistente
+- `system` - Prompts del sistema (interno)
+
+Cualquier otro valor se rechaza.
+
+### Logging y Auditoría
+
+**Estructura de logs de seguridad:**
+```json
 {
-  "session_id": "user-123",
-  "pattern": "'; DROP TABLE--",
-  "severity": "WARNING"
+  "timestamp": "2025-12-10T12:35:30.123Z",
+  "level": "WARNING",
+  "event_type": "SQL_INJECTION_ATTEMPT",
+  "details": {
+    "session_id": "user-123",
+    "pattern_detected": "DROP TABLE",
+    "input_length": 156,
+    "source_ip": "192.168.1.100"
+  }
 }
 ```
+
+**Eventos registrados:**
+- Intentos de SQL injection
+- Session IDs inválidos
+- Contenido excesivamente largo
+- Roles no autorizados
+- Patrones sospechosos
+
+### Recomendaciones de Seguridad
+
+**Para desarrollo:**
+- ✅ Usar `.env` local (git-ignored)
+- ✅ No compartir `OPENAI_KEY`
+- ✅ Activar `DEBUG=False` en producción
+
+**Para producción:**
+- ✅ Desplegar en red privada (no exponer directamente a internet)
+- ✅ Usar HTTPS (TLS/SSL)
+- ✅ Variables de entorno gestionadas por plataforma (AWS Secrets Manager, Azure Key Vault)
+- ✅ Implementar rate limiting (nginx, API Gateway)
+- ✅ Firewall de base de datos (solo permitir conexiones desde microservicio)
+- ✅ Monitoreo de logs en tiempo real
+- ✅ Alertas automáticas ante patrones de ataque
 
 ---
 
 ## Base de Datos
 
-### Esquema
+### Esquema de Datos
 
-**chat_messages:**
+El sistema utiliza dos tablas principales:
+
+#### **chat_messages** (Mensajes de conversación)
+
 ```sql
 CREATE TABLE chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL,
+    role VARCHAR(20) NOT NULL CHECK(role IN ('user', 'assistant', 'system')),
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_session_messages ON chat_messages(session_id, created_at);
+CREATE INDEX idx_created_at ON chat_messages(created_at);
 ```
 
-**session_metadata:**
+**Columnas:**
+- `id`: Identificador único autoincremental
+- `session_id`: Identificador de sesión (email, UUID, ID simple)
+- `role`: Rol del mensaje (`user`, `assistant`, `system`)
+- `content`: Contenido del mensaje (hasta 50KB)
+- `created_at`: Timestamp de creación
+
+**Índices:**
+- `idx_session_messages`: Búsqueda rápida por sesión y orden cronológico
+- `idx_created_at`: Limpieza eficiente de mensajes antiguos
+
+#### **session_metadata** (Metadata de sesiones)
+
 ```sql
 CREATE TABLE session_metadata (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -628,273 +925,245 @@ CREATE TABLE session_metadata (
     last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     message_count INTEGER DEFAULT 0
 );
+
+CREATE INDEX idx_last_activity ON session_metadata(last_activity);
 ```
 
-### Migración a PostgreSQL (Producción)
+**Columnas:**
+- `id`: Identificador único
+- `session_id`: Identificador de sesión (único)
+- `created_at`: Fecha de creación de la sesión
+- `last_activity`: Última actividad (actualizada en cada mensaje)
+- `message_count`: Contador de mensajes en la sesión
 
-**Actualizar `DATABASE_URL` en `.env`:**
+**Índices:**
+- `idx_last_activity`: Identificar sesiones inactivas
+
+### Gestión de Sesiones
+
+**Límites configurables:**
+- `SESSION_MAX_MESSAGES`: Máximo de mensajes por sesión (default: 50)
+- Al superar 100 mensajes, se eliminan automáticamente los 50 más antiguos
+
+**Trimming automático:**
+```python
+message_limit = settings.session_max_messages  # 50
+total_messages = repo.get_recent_messages_count(session_id)
+
+if total_messages > message_limit * 2:  # 100
+    repo.trim_session_messages(session_id, message_limit * 2)
+```
+
+**Ventana deslizante:** Se mantienen siempre los mensajes más recientes.
+
+### Bases de Datos Soportadas
+
+#### **SQLite** (Desarrollo)
+```env
+DATABASE_URL=sqlite:///./utec_planificador.db
+```
+
+**Ventajas:**
+- ✅ Zero setup (archivo local)
+- ✅ Rápido para desarrollo
+- ✅ No requiere servidor
+
+**Limitaciones:**
+- ⚠️ Concurrencia limitada (1 escritor a la vez)
+- ⚠️ Necesita ser cambiado en producción
+
+#### **PostgreSQL** (Producción - Recomendado)
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/utec_planificador
 ```
 
-**Instalar driver:**
+**Ventajas:**
+- ✅ Concurrencia real (múltiples escrituras simultáneas)
+- ✅ ACID completo
+- ✅ Escalabilidad horizontal
+- ✅ Respaldos automáticos
+- ✅ Tipos JSON nativos
+- ✅ Full-text search
+
+**Instalación del driver:**
 ```bash
 pip install psycopg2-binary
 ```
 
-El sistema detectará automáticamente el tipo de base de datos por la URL.
-
-### Limpieza Automática
-
-**Configuración recomendada:**
-- Eliminar mensajes antiguos después de 90 días
-- Mantener solo últimos 100 mensajes por sesión activa
-- Comprimir sesiones inactivas después de 30 días
-
----
-
-## Estructura del Proyecto
-
+#### **MySQL** (Alternativa)
+```env
+DATABASE_URL=mysql+pymysql://user:password@localhost:3306/utec_planificador
 ```
-utec-planificador-ai/
-├── app/
-│   ├── main_v2.py                    # Aplicación principal FastAPI
-│   ├── agents/                       # Agentes con LangGraph
-│   │   ├── chatbot_agent.py          # Agente pedagógico principal
-│   │   └── state.py                  # Estado del chatbot
-│   ├── api/                          # Capa de API
-│   │   ├── schemas/                  # DTOs Pydantic
-│   │   │   ├── chat_dto.py
-│   │   │   ├── suggestion_dto.py
-│   │   │   ├── report_dto.py
-│   │   │   ├── report_schemas.py     # Schemas de respuesta
-│   │   │   └── suggestion_schemas.py
-│   │   └── v2/                       # Endpoints V2
-│   │       ├── chatbot_routes.py
-│   │       ├── suggestion_routes.py
-│   │       └── report_routes.py
-│   ├── core/                         # Configuración y constantes
-│   │   ├── config.py                 # Settings con Pydantic
-│   │   ├── prompts.py                # Prompts centralizados
-│   │   ├── json_schemas.py           # JSON Schemas OpenAI
-│   │   ├── constants.py              # Constantes (ODS, etc)
-│   │   └── security.py               # Validación de seguridad
-│   ├── database/                     # Capa de datos
-│   │   ├── models.py                 # Modelos SQLAlchemy
-│   │   └── repository.py             # Repositorio de datos
-│   └── services/                     # Lógica de negocio
-│       ├── chatbot_service.py
-│       ├── suggestion_service.py
-│       └── report_service.py
-├── scripts/                          # Scripts de utilidad
-│   ├── start_v2.bat
-│   ├── start_v2.sh
-│   └── start_v2.ps1
-├── .env                              # Variables de entorno
-├── .env.example                      # Ejemplo de configuración
-├── pyproject.toml                    # Configuración del proyecto
-├── requirements.txt                  # Dependencias
-└── README.md                         # Este archivo
+
+**Instalación del driver:**
+```bash
+pip install pymysql
 ```
+
+### Migración entre Bases de Datos
+
+Gracias a SQLAlchemy ORM, cambiar de base de datos solo requiere:
+
+1. Actualizar `DATABASE_URL` en `.env`
+2. Instalar driver correspondiente
+3. Reiniciar aplicación
+
+El esquema se crea automáticamente en el primer inicio.
+
+### Costos Estimados
+
+**OpenAI API (GPT-4o-mini):**
+- Input: $0.150 / 1M tokens
+- Output: $0.600 / 1M tokens
+- Promedio por conversación (10 mensajes): ~$0.02-0.05
+- Costo mensual (1000 usuarios activos): ~$200-500
+
+**Infraestructura:**
+- Docker/VPS: $10-50/mes (pequeña escala)
+- Kubernetes cluster: $100-300/mes (mediana escala)
+- Database: $20-100/mes (PostgreSQL managed)
+
+**Total estimado:** $230-850/mes para 1000 usuarios activos
 
 ---
 
 ## Uso y Ejemplos
 
-### Ejemplo 1: Chatbot Simple
+### Ejemplo 1: Chatbot Conversacional
+
+**Caso de uso:** Docente pregunta sobre metodologías de enseñanza
 
 ```bash
-curl -X POST http://localhost:8000/agent/chat/message \
+curl -X POST "http://localhost:8000/agent/chat/message" \
   -H "Content-Type: application/json" \
   -d '{
-    "session_id": "test-user",
-    "message": "¿Qué son los ODS?"
-  }'
-```
-
-### Ejemplo 2: Chatbot con Contexto
-
-```bash
-curl -X POST http://localhost:8000/agent/chat/message \
-  -H "Content-Type: application/json" \
-  -d '{
-    "session_id": "teacher@utec.edu.uy",
-    "message": "Dame sugerencias para mi planificación",
+    "session_id": "docente@utec.edu.uy",
+    "message": "¿Cómo puedo aplicar el aprendizaje basado en proyectos?",
     "coursePlanning": {
-      "curricularUnit": {"name": "Química Básica"},
-      "description": "Curso introductorio de química"
+      "curricularUnit": {"name": "Desarrollo de Software"},
+      "description": "Curso de ingeniería de software"
     }
   }'
 ```
 
-### Ejemplo 3: Generar Sugerencias
+**Respuesta esperada:**
+```json
+{
+  "reply": "El Aprendizaje Basado en Proyectos (ABP) es una metodología muy efectiva para tu curso de Desarrollo de Software. Aquí te propongo algunos pasos:
 
-```python
-import requests
+1. **Define un proyecto real**: Puede ser una aplicación web completa, una API REST, o un sistema de gestión.
 
-response = requests.post(
-    "http://localhost:8000/agent/suggestions/generate",
-    json={
-        "coursePlanning": {
-            "curricularUnit": {"name": "Programación", "credits": 6},
-            "weeklyPlannings": [...]
-        }
-    }
-)
+2. **Establece hitos semanales**: 
+   - Semana 1-2: Análisis y diseño
+   - Semana 3-4: Implementación del backend
+   - Semana 5-6: Frontend e integración
+   - Semana 7-8: Testing y despliegue
 
-result = response.json()
-print(result["analysis"])
-print(result["pedagogicalSuggestions"])
-```
+3. **Trabajo en equipos**: Asigna roles (Product Owner, Scrum Master, Developers) para simular entornos profesionales.
 
-### Ejemplo 4: Generar Reporte
+4. **Evaluación continua**: Revisiones de sprint cada 2 semanas con retroalimentación.
 
-```python
-import requests
+5. **Vinculación con ODS**: Puedes proponer proyectos que aborden problemas sociales (ODS 4: Educación, ODS 8: Trabajo decente).
 
-response = requests.post(
-    "http://localhost:8000/agent/report/generate",
-    json={
-        "courseId": "curso-123",
-        "statistics": {
-            "cognitiveProcesses": {"REMEMBER": 10, "UNDERSTAND": 15},
-            "totalWeeks": 16,
-            "totalInPersonHours": 120
-        },
-        "coursePlanning": {...}
-    }
-)
-
-report = response.json()["report"]
-print(f"Mensaje: {report['message']}")
-print(f"Fortalezas: {report['strengths']}")
-print(f"Áreas de mejora: {report['improvementAreas']}")
-```
-
----
-
-## Contribución y Desarrollo
-
-### Requisitos de Desarrollo
-
-- Python 3.9+
-- Editor con soporte para Python (VS Code, PyCharm)
-- Git
-- OpenAI API Key (para testing)
-
-### Flujo de Trabajo
-
-1. **Fork y clonar:**
-```bash
-git clone https://github.com/tu-usuario/utec-planificador-ai.git
-cd utec-planificador-ai
-```
-
-2. **Crear rama de feature:**
-```bash
-git checkout -b feature/nueva-funcionalidad
-```
-
-3. **Desarrollar y probar:**
-```bash
-# Instalar dependencias de desarrollo
-pip install -r requirements-dev.txt
-
-# Ejecutar tests
-pytest
-
-# Verificar estilo de código
-flake8 app/
-black app/ --check
-```
-
-4. **Commit y push:**
-```bash
-git add .
-git commit -m "feat: descripción de la nueva funcionalidad"
-git push origin feature/nueva-funcionalidad
-```
-
-5. **Crear Pull Request**
-
-### Convenciones de Código
-
-- **Estilo:** PEP 8
-- **Docstrings:** Google Style
-- **Type hints:** Obligatorios en funciones públicas
-- **Imports:** Agrupados (stdlib, third-party, local)
-
-### Testing
-
-```bash
-# Ejecutar todos los tests
-pytest
-
-# Con cobertura
-pytest --cov=app --cov-report=html
-
-# Tests específicos
-pytest tests/test_chatbot.py
-```
-
-### Actualización de Prompts
-
-Los prompts están centralizados en `app/core/prompts.py`:
-
-```python
-# Actualizar un prompt
-SYSTEM_PROMPT = """
-Nueva versión del prompt...
-"""
-
-# Actualizar JSON Schema
-REPORT_JSON_SCHEMA = {
-    "type": "json_schema",
-    "json_schema": { ... }
+¿Te gustaría que profundice en algún aspecto específico?"
 }
 ```
 
+### Ejemplo 2: Generar Sugerencias
+
+```bash
+curl -X POST "http://localhost:8000/agent/suggestions" \
+  -H "Content-Type: application/json" \
+  -d @planificacion.json
+```
+
+**planificacion.json:**
+```json
+{
+  "coursePlanning": {
+    "curricularUnit": {
+      "name": "Algoritmos y Estructura de Datos",
+      "credits": 8
+    },
+    "description": "Curso fundamental de algoritmos",
+    "weeklyPlannings": [
+      {
+        "weekNumber": 1,
+        "activities": [
+          {
+            "name": "Introducción a algoritmos",
+            "cognitiveProcesses": ["REMEMBER", "UNDERSTAND"],
+            "teachingStrategies": ["LECTURE"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Ejemplo 3: Generar Reporte
+
+```python
+import requests
+
+url = "http://localhost:8000/agent/report/generate"
+
+payload = {
+    "courseId": "curso-123",
+    "statistics": {
+        "cognitiveProcesses": {
+            "REMEMBER": 5,
+            "UNDERSTAND": 10,
+            "APPLY": 15,
+            "ANALYZE": 8,
+            "EVALUATE": 4,
+            "CREATE": 3
+        },
+        "totalWeeks": 16,
+        "totalInPersonHours": 96,
+        "totalVirtualHours": 48,
+        "totalHybridHours": 24
+    },
+    "coursePlanning": {
+        "curricularUnit": {"name": "Inteligencia Artificial"},
+        "description": "Curso avanzado de IA"
+    }
+}
+
+response = requests.post(url, json=payload)
+report = response.json()
+
+print(f"Análisis: {report['report']['detailedAnalysis']['cognitiveProcesses']}")
+print(f"Fortalezas: {report['report']['strengths']}")
+print(f"Mejoras: {report['report']['improvementAreas']}")
+```
+
 ---
 
-## Troubleshooting
-
-### Problema: "OPENAI_KEY is not configured"
-
-**Solución:** Verificar que el archivo `.env` existe y contiene la API key:
-```bash
-cat .env | grep OPENAI_KEY
+**Docstrings:**
+```python
+def generate_report(course_id: str, statistics: Dict) -> ReportResponse:
+    """
+    Generate a pedagogical evaluation report.
+    
+    Args:
+        course_id: Unique identifier for the course
+        statistics: Dictionary with course statistics
+        
+    Returns:
+        ReportResponse with analysis and recommendations
+        
+    Raises:
+        HTTPException: If validation fails or OpenAI error occurs
+    """
+    pass
 ```
 
-### Problema: "Cannot connect to database"
+### Documentación
 
-**Solución:** Verificar permisos del archivo SQLite o conexión a PostgreSQL:
-```bash
-ls -l utec_planificador.db
-```
-
-### Problema: "Port 8000 already in use"
-
-**Solución:** Cambiar el puerto o detener el proceso:
-```bash
-# Cambiar puerto
-uvicorn app.main_v2:app --port 8001
-
-# O detener proceso en Windows
-netstat -ano | findstr :8000
-taskkill /PID <PID> /F
-```
-
-### Problema: Respuestas lentas
-
-**Causas comunes:**
-- Red lenta a OpenAI API
-- Prompt muy largo
-- Historial de conversación muy extenso
-
-**Soluciones:**
-- Reducir `SESSION_MAX_MESSAGES`
-- Optimizar prompts
-- Implementar cache de respuestas
+- **README.md:** Documentación principal (este archivo)
+- **Docstrings:** En todas las funciones públicas
+- **OpenAPI:** Generada automáticamente en `/docs`
 
 ---
-
