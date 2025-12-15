@@ -7,9 +7,29 @@ from datetime import datetime, timedelta
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.database.models import init_database, ChatMessage, SessionMetadata
-from sqlalchemy import func
-import app.database.models as db_models
+from sqlalchemy import create_engine, func
+from sqlalchemy.orm import sessionmaker
+from app.database.models import Base, ChatMessage, SessionMetadata
+
+
+def get_database_session():
+    """Initialize database connection without requiring OpenAI settings."""
+    # Default database path
+    db_path = Path(__file__).parent.parent / "utec_planificador.db"
+    database_url = f"sqlite:///{db_path}"
+
+    # Create engine and session
+    engine = create_engine(
+        database_url,
+        connect_args={"check_same_thread": False}
+    )
+
+    # Create tables if they don't exist
+    Base.metadata.create_all(bind=engine)
+
+    # Create session
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    return SessionLocal()
 
 
 def print_header(title):
@@ -153,8 +173,7 @@ def pause():
 
 def interactive_menu():
     """Show interactive menu."""
-    init_database()
-    db = db_models.SessionLocal()
+    db = get_database_session()
 
     while True:
         clear_screen()
@@ -267,8 +286,7 @@ def main():
             return 0
 
         # Command-line mode (for advanced users or scripts)
-        init_database()
-        db = db_models.SessionLocal()
+        db = get_database_session()
         command = sys.argv[1].lower()
 
         if command == "stats":
