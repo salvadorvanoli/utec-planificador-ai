@@ -38,7 +38,6 @@ class SessionMetadata(Base):
     message_count = Column(Integer, default=0, nullable=False)
 
 
-# Database engine and session
 engine = None
 SessionLocal = None
 
@@ -53,7 +52,6 @@ def init_database():
         connect_args={"check_same_thread": False} if "sqlite" in settings.database_url else {}
     )
 
-    # Create tables
     Base.metadata.create_all(bind=engine)
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

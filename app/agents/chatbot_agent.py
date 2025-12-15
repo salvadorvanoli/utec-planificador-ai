@@ -47,7 +47,6 @@ class PedagogicalAgent:
             }
         )
         
-        # Add edges to end
         workflow.add_edge("generate_response", END)
         workflow.add_edge("handle_invalid", END)
 
@@ -144,7 +143,7 @@ class PedagogicalAgent:
 
         openai_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-        for msg in messages:
+        for i, msg in enumerate(messages):
             openai_messages.append({
                 "role": msg["role"],
                 "content": msg["content"]
@@ -212,9 +211,7 @@ class PedagogicalAgent:
         messages: List[Dict[str, str]],
         planning: Dict[str, Any] = None
     ) -> str:
-        """
-        Run the agent with user input.
-        """
+        """Run the agent with user input."""
         state: ChatState = {
             "session_id": session_id,
             "user_input": user_input,
