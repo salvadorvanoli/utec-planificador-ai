@@ -1,10 +1,4 @@
 """Enum descriptions and mappings for the UTEC Planning System.
-
-This module provides human-readable descriptions for all enums used in the system.
-These descriptions are used by:
-- AI agents to understand context better
-- Report generation to provide detailed explanations
-- Services to format user-friendly messages
 """
 from typing import Dict, List
 
@@ -137,7 +131,6 @@ SHIFT_DESCRIPTIONS = {
 
 
 # ==================== PARTIAL GRADING SYSTEM (SCP - Sistemas de Calificación de Parciales) ====================
-# Basado en la Circular de Evaluaciones, Calificaciones e Inasistencias de UTEC
 
 PARTIAL_GRADING_SYSTEM_DESCRIPTIONS = {
     "SCP_1": "SCP 1 - Primera evaluación: 25%, Segunda evaluación: 35%, Evaluación Continua: 40%",
@@ -184,25 +177,12 @@ PROFESSIONAL_COMPETENCY_DESCRIPTIONS = {
 
 def get_sdg_description(sdg_code: str) -> str:
     """Get the full description of an SDG by its code.
-
-    Args:
-        sdg_code: SDG code (e.g., "SDG_1", "SDG_17")
-
-    Returns:
-        Human-readable description of the SDG
     """
     return SDG_DESCRIPTIONS.get(sdg_code, f"Descripción no disponible para {sdg_code}")
 
 
 def get_sdgs_with_descriptions(sdg_list: List[str]) -> str:
-    """Convert a list of SDG codes to a formatted string with descriptions.
-
-    Args:
-        sdg_list: List of SDG codes
-
-    Returns:
-        Formatted multi-line string with SDGs and descriptions
-    """
+    """Convert a list of SDG codes to a formatted string with descriptions."""
     if not sdg_list:
         return "Ningún ODS vinculado"
 
@@ -215,14 +195,7 @@ def get_sdgs_with_descriptions(sdg_list: List[str]) -> str:
 
 
 def get_cognitive_processes_with_descriptions(processes: List[str]) -> str:
-    """Convert a list of cognitive processes to a formatted string with descriptions.
-
-    Args:
-        processes: List of cognitive process codes
-
-    Returns:
-        Formatted multi-line string with processes and descriptions
-    """
+    """Convert a list of cognitive processes to a formatted string with descriptions."""
     if not processes:
         return "No especificado"
 
@@ -235,15 +208,7 @@ def get_cognitive_processes_with_descriptions(processes: List[str]) -> str:
 
 
 def get_enum_description(enum_type: str, enum_value: str) -> str:
-    """Get description for any enum type and value.
-
-    Args:
-        enum_type: Type of enum (e.g., "SDG", "COGNITIVE_PROCESS", "TEACHING_STRATEGY")
-        enum_value: Value of the enum (e.g., "SDG_1", "REMEMBER", "LECTURE")
-
-    Returns:
-        Human-readable description
-    """
+    """Get description for any enum type and value."""
     mappings = {
         "SDG": SDG_DESCRIPTIONS,
         "COGNITIVE_PROCESS": COGNITIVE_PROCESS_DESCRIPTIONS,
@@ -264,11 +229,7 @@ def get_enum_description(enum_type: str, enum_value: str) -> str:
 
 
 def get_all_descriptions_for_prompt() -> str:
-    """Get all enum descriptions formatted for AI prompts.
-
-    Returns:
-        Formatted string with all descriptions for context injection in prompts
-    """
+    """Get all enum descriptions formatted for AI prompts."""
     sections = [
         ("OBJETIVOS DE DESARROLLO SOSTENIBLE (ODS)", SDG_DESCRIPTIONS),
         ("PROCESOS COGNITIVOS (Taxonomía de Bloom)", COGNITIVE_PROCESS_DESCRIPTIONS),

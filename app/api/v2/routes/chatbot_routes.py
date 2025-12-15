@@ -11,7 +11,6 @@ from app.core.security import SecurityViolation
 router = APIRouter(tags=["Chatbot"])
 logger = logging.getLogger(__name__)
 
-# Service instance
 chatbot_service = ChatbotService()
 
 
@@ -22,15 +21,7 @@ async def chat_message(
 ):
     """
     Process a chat message and return the assistant's response.
-
-    Args:
-        request: Chat request with session_id, message, and optional planning
-        db: Database session
-
-    Returns:
-        Dictionary with the assistant's reply
     """
-    # Validate input
     if not request.session_id or not request.session_id.strip():
         raise HTTPException(
             status_code=400,
@@ -44,12 +35,10 @@ async def chat_message(
         )
 
     try:
-        # Convert planning to dict if provided
         planning_dict = None
         if request.coursePlanning:
             planning_dict = request.coursePlanning.model_dump()
 
-        # Process message
         response = chatbot_service.process_message(
             db=db,
             session_id=request.session_id,
@@ -81,13 +70,6 @@ async def delete_chat_session(
 ):
     """
     Delete a chat session and all its messages.
-
-    Args:
-        session_id: Session identifier
-        db: Database session
-
-    Returns:
-        Success message
     """
     try:
         success = chatbot_service.clear_session(db, session_id)
@@ -119,13 +101,6 @@ async def get_chat_history(
 ):
     """
     Get conversation history for a session.
-
-    Args:
-        session_id: Session identifier
-        db: Database session
-
-    Returns:
-        ChatHistoryResponse with list of messages
     """
     try:
         messages = chatbot_service.get_session_history(db, session_id)

@@ -1,4 +1,3 @@
-"""LangGraph-based pedagogical chatbot agent."""
 import json
 import logging
 from typing import Dict, Any, List
@@ -22,7 +21,6 @@ class PedagogicalAgent:
     def __init__(self):
         self.settings = get_settings()
 
-        # Validate API key
         if not self.settings.openai_api_key:
             logger.error("OPENAI_KEY is not configured in environment variables")
             raise ValueError("OpenAI API key is not configured")
@@ -33,16 +31,13 @@ class PedagogicalAgent:
     def _build_graph(self) -> StateGraph:
         """Build the LangGraph workflow."""
         workflow = StateGraph(ChatState)
-        
-        # Add nodes
+
         workflow.add_node("validate_input", self._validate_input)
         workflow.add_node("generate_response", self._generate_response)
         workflow.add_node("handle_invalid", self._handle_invalid_input)
 
-        # Set entry point
         workflow.set_entry_point("validate_input")
 
-        # Add conditional edges
         workflow.add_conditional_edges(
             "validate_input",
             self._should_generate_response,
@@ -63,10 +58,8 @@ class PedagogicalAgent:
         user_input = state["user_input"]
         planning = state.get("planning")
 
-        # Build planning context if available
         context_info = self._build_planning_context(planning)
         
-        # Use LLM for validation
         validation_prompt = VALIDATION_PROMPT_TEMPLATE.format(
             context_info=context_info,
             user_input=user_input
@@ -85,7 +78,6 @@ class PedagogicalAgent:
             
             response_text = response.choices[0].message.content.strip()
 
-            # Parse JSON (guaranteed to be valid by schema)
             result = json.loads(response_text)
 
             state["is_valid"] = result["is_valid"]
@@ -95,7 +87,6 @@ class PedagogicalAgent:
 
         except Exception as e:
             logger.error(f"Validation error: {e}")
-            # In case of error, be permissive
             state["is_valid"] = True
             state["validation_reason"] = "Validation error - defaulting to valid"
         
@@ -120,17 +111,14 @@ class PedagogicalAgent:
         
         context_parts = ["\nContexto de planificación disponible:"]
 
-        # Extract curricular unit name
         curricular_unit_name = self._extract_curricular_unit_name(planning)
         if curricular_unit_name:
             context_parts.append(f"- Unidad Curricular: {curricular_unit_name}")
 
-        # Extract description
         description = planning.get("description", "")
         if description:
             context_parts.append(f"- Descripción del curso: {description[:200]}")
 
-        # Extract programmatic content
         if "weeklyPlannings" in planning:
             weekly = planning["weeklyPlannings"]
             if isinstance(weekly, list) and weekly:
@@ -154,24 +142,19 @@ class PedagogicalAgent:
         user_input = state["user_input"]
         planning = state.get("planning")
 
-        # Build conversation messages for OpenAI
         openai_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-        # Add conversation history
         for msg in messages:
             openai_messages.append({
                 "role": msg["role"],
                 "content": msg["content"]
             })
 
-        # Add planning context if available
-        # The LLM will decide how to use this information based on the user's query
         planning_context = ""
         if planning:
             curricular_unit_name = self._extract_curricular_unit_name(planning)
             planning_json = json.dumps(planning, indent=2, ensure_ascii=False)
 
-            # Build context with planning information
             planning_context = f"\n\n=== CONTEXTO DE PLANIFICACIÓN DISPONIBLE ===\n"
             if curricular_unit_name:
                 planning_context += f"Unidad Curricular: {curricular_unit_name}\n\n"
@@ -182,7 +165,6 @@ class PedagogicalAgent:
                 "No analices la planificación a menos que el usuario lo solicite explícitamente.\n"
             )
 
-        # Add current user input with planning context if available
         full_input = user_input
         if planning_context:
             full_input = f"{user_input}{planning_context}"
@@ -232,15 +214,6 @@ class PedagogicalAgent:
     ) -> str:
         """
         Run the agent with user input.
-        
-        Args:
-            session_id: Session identifier
-            user_input: User's message
-            messages: Conversation history
-            planning: Optional planning context
-            
-        Returns:
-            Agent's response
         """
         state: ChatState = {
             "session_id": session_id,

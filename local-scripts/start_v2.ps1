@@ -31,7 +31,7 @@ Write-Host "[INFO] Activating virtual environment..." -ForegroundColor Cyan
 
 # Install/Update dependencies
 Write-Host "[INFO] Installing dependencies..." -ForegroundColor Cyan
-pip install -r requirements.txt --quiet
+pip install . --quiet
 Write-Host ""
 
 # Start the application (DB initializes automatically)

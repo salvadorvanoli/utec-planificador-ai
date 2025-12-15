@@ -7,7 +7,6 @@ from app.services.suggestion_service import SuggestionService
 router = APIRouter(tags=["Suggestions"])
 logger = logging.getLogger(__name__)
 
-# Service instance
 suggestion_service = SuggestionService()
 
 
@@ -15,21 +14,12 @@ suggestion_service = SuggestionService()
 async def generate_suggestions(request: CoursePlanningRequestDTO):
     """
     Generate pedagogical suggestions for a course planning.
-
-    Args:
-        request: Course planning data
-
-    Returns:
-        Analysis and pedagogical suggestions
     """
     try:
-        # Extract planning data
         planning_dict = request.coursePlanning.model_dump()
 
-        # Generate suggestions (returns SuggestionGenerationResult schema)
         result = suggestion_service.generate_suggestions(planning_dict)
 
-        # Schema already guarantees correct structure, just return it
         return SuggestionResponse(
             analysis=result.analysis,
             pedagogicalSuggestions=result.pedagogicalSuggestions

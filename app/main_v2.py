@@ -1,9 +1,4 @@
-"""
-UTEC Planificador AI - Main Application (V2)
-
-Microservicio de IA especializado en asistencia pedagógica para UTEC.
-Version 2.0 - Refactorizado con arquitectura mejorada y persistencia en base de datos.
-"""
+"""UTEC Planificador AI - Main Application (V2)"""
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -15,7 +10,6 @@ from app.api.v2.routes.chatbot_routes import router as chatbot_router
 from app.api.v2.routes.suggestion_routes import router as suggestion_router
 from app.api.v2.routes.report_routes import router as report_router
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -28,7 +22,6 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle."""
-    # Startup
     logger.info("=" * 60)
     logger.info("UTEC Planificador AI Agent V2 - Starting")
     logger.info("=" * 60)
@@ -47,13 +40,11 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # Shutdown
     logger.info("=" * 60)
     logger.info("UTEC Planificador AI Agent V2 - Shutting down")
     logger.info("=" * 60)
 
 
-# Create FastAPI application
 settings = get_settings()
 
 app = FastAPI(
@@ -66,21 +57,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(chatbot_router, prefix="/agent/v2")
-app.include_router(suggestion_router, prefix="/agent/v2")
-app.include_router(report_router, prefix="/agent/v2")
-
-# Backwards compatibility - include v2 routes at old prefix as well
 app.include_router(chatbot_router, prefix="/agent")
 app.include_router(suggestion_router, prefix="/agent")
 app.include_router(report_router, prefix="/agent")

@@ -25,7 +25,6 @@ class ReportService:
     def __init__(self):
         self.settings = get_settings()
 
-        # Validate API key
         if not self.settings.openai_api_key:
             logger.error("OPENAI_KEY is not configured in environment variables")
             raise ValueError("OpenAI API key is not configured")
@@ -38,33 +37,19 @@ class ReportService:
         statistics: Dict[str, Any],
         planning: Dict[str, Any]
     ) -> ReportGenerationResult:
-        """
-        Generate a pedagogical evaluation report.
-
-        Args:
-            course_id: Course identifier
-            statistics: Course statistics
-            planning: Complete course planning
-
-        Returns:
-            Dictionary with report data
-        """
+        """Generate a pedagogical evaluation report."""
         try:
-            # Format data for the prompt
             statistics_json = json.dumps(statistics, indent=2, ensure_ascii=False)
             planning_json = json.dumps(planning, indent=2, ensure_ascii=False)
 
-            # Build SDG context
             sdg_context = self._build_sdg_context(statistics)
 
-            # Generate prompt
             prompt = REPORT_PROMPT_TEMPLATE.format(
                 statistics=statistics_json,
                 planning=planning_json,
                 sdg_context=sdg_context
             )
 
-            # Call OpenAI with structured output (uses JSON schema constant)
             response = self.client.chat.completions.create(
                 model=self.settings.openai_model,
                 messages=[ # type: ignore[arg-type]
@@ -80,9 +65,7 @@ class ReportService:
             logger.info(f"OpenAI raw response length: {len(content)} characters")
             logger.debug(f"OpenAI response preview: {content[:200]}...")
 
-            # Try to parse as JSON
             try:
-                # Extract JSON if wrapped in markdown code blocks
                 if "```json" in content:
                     content = content.split("```json")[1].split("```")[0].strip()
                 elif "```" in content:
@@ -92,7 +75,6 @@ class ReportService:
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse JSON response: {e}")
                 logger.warning(f"Raw content: {content[:500]}")
-                # Fallback: structure the response manually with complete structure
                 report_data = {
                     "message": "Análisis completado",
                     "detailedAnalysis": {
@@ -108,7 +90,6 @@ class ReportService:
                     "recommendations": [content] if content else ["Intenta regenerar el reporte"]
                 }
 
-            # Build executive summary using schema (guarantees structure)
             executive_summary = ExecutiveSummarySchema(
                 totalWeeks=statistics.get('totalWeeks', 0),
                 totalHours=(
@@ -123,7 +104,6 @@ class ReportService:
                 totalActivitiesAnalyzed=sum(statistics.get('cognitiveProcesses', {}).values())
             )
 
-            # Build detailed analysis using schema
             detailed_analysis_data = report_data.get("detailedAnalysis", {})
             detailed_analysis = DetailedAnalysisSchema(
                 cognitiveProcesses=detailed_analysis_data.get("cognitiveProcesses", ""),
@@ -134,7 +114,6 @@ class ReportService:
                 sdgLinkage=detailed_analysis_data.get("sdgLinkage", "")
             )
 
-            # Build complete report using schema
             report = ReportSchema(
                 courseId=course_id,
                 analysisDate=datetime.now().strftime("%Y-%m-%d"),
@@ -145,7 +124,6 @@ class ReportService:
                 improvementAreas=report_data.get("improvementAreas", [])
             )
 
-            # Return using result schema
             return ReportGenerationResult(
                 success=True,
                 report=report,
@@ -155,7 +133,6 @@ class ReportService:
         except Exception as e:
             logger.error(f"Error generating report: {e}", exc_info=True)
 
-            # Return error response with proper schema structure
             error_report = ReportSchema(
                 courseId=course_id,
                 analysisDate=datetime.now().strftime("%Y-%m-%d"),

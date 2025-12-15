@@ -30,26 +30,14 @@ class SuggestionService:
         planning_data: Dict[str, Any],
         context: Dict[str, Any] = None
     ) -> SuggestionGenerationResult:
-        """
-        Generate pedagogical suggestions based on course planning.
-
-        Args:
-            planning_data: Complete course planning data
-            context: Additional context (course_id, etc.)
-
-        Returns:
-            SuggestionGenerationResult with analysis and suggestions
-        """
+        """Generate pedagogical suggestions based on course planning."""
         context = context or {}
 
         try:
-            # Build planning summary
             summary = self._build_planning_summary(planning_data)
 
-            # Generate prompt
             prompt = SUGGESTION_PROMPT_TEMPLATE.format(planning_summary=summary)
 
-            # Call OpenAI with structured output (uses JSON schema constant)
             response = self.client.chat.completions.create(
                 model=self.settings.openai_model,
                 messages=[  # type: ignore[arg-type]
@@ -63,10 +51,8 @@ class SuggestionService:
 
             content = response.choices[0].message.content.strip()
 
-            # Parse JSON (guaranteed to be valid by schema)
             result = json.loads(content)
 
-            # Return using Pydantic schema
             return SuggestionGenerationResult(
                 analysis=result["analysis"],
                 pedagogicalSuggestions=result["pedagogicalSuggestions"]
@@ -83,12 +69,10 @@ class SuggestionService:
         """Build a summary of the planning data for the prompt."""
         summary_parts = []
 
-        # Basic information
         description = planning_data.get("description", "")
         if description:
             summary_parts.append(f"**Descripción del curso:**\n{description}\n")
 
-        # Delivery format hours
         hours_per_format = planning_data.get("hoursPerDeliveryFormat", {})
         if hours_per_format:
             summary_parts.append("**Horas por formato de entrega:**")
@@ -96,17 +80,14 @@ class SuggestionService:
                 summary_parts.append(f"- {format_type}: {hours} horas")
             summary_parts.append("")
 
-        # SDGs
         sdgs = planning_data.get("sustainableDevelopmentGoals", [])
         if sdgs:
             summary_parts.append(f"**ODS vinculados:** {', '.join(sdgs)}\n")
 
-        # UDL principles
         udl = planning_data.get("universalDesignLearningPrinciples", [])
         if udl:
             summary_parts.append(f"**Principios UDL:** {', '.join(udl)}\n")
 
-        # Analyze activities
         weekly_plannings = planning_data.get("weeklyPlannings", [])
         cognitive_processes = []
         strategies = []
@@ -114,7 +95,6 @@ class SuggestionService:
         modalities = []
 
         for week in weekly_plannings:
-            # Direct activities
             for activity in week.get("activities", []):
                 cognitive_processes.extend(activity.get("cognitiveProcesses", []))
                 strategies.extend(activity.get("teachingStrategies", []))
@@ -123,7 +103,6 @@ class SuggestionService:
                 if modality:
                     modalities.append(modality)
 
-            # Activities within programmatic contents
             for content in week.get("programmaticContents", []):
                 for activity in content.get("activities", []):
                     cognitive_processes.extend(activity.get("cognitiveProcesses", []))
@@ -133,7 +112,6 @@ class SuggestionService:
                     if modality:
                         modalities.append(modality)
 
-        # Count and summarize
         if cognitive_processes:
             process_counts = self._count_items(cognitive_processes)
             summary_parts.append("**Procesos cognitivos:**")

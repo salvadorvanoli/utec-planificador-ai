@@ -30,7 +30,7 @@ call .venv\Scripts\activate.bat
 
 REM Install/update dependencies
 echo [INFO] Installing dependencies...
-pip install -r requirements.txt
+pip install .
 
 REM Start the server
 echo.
